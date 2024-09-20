@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  username String @unique
+  password String
+  email    String @unique // Make it required and unique
+}
+
+model Event {
+  id        Int      @id @default(autoincrement())
+  title     String
+  start     DateTime
+  end       DateTime
+  color     String
+  patient   Patient? @relation(fields: [patientId], references: [id])
+  patientId Int?
+}
+
+model Patient {
+  id                 Int      @id @default(autoincrement())
+  firstName          String
+  lastName           String
+  dateOfBirth        DateTime
+  homePhone          String?
+  currentTreatment   String?
+  medicalHistory     String?
+  surgeryHistory     String?
+  anyMedicalProblems String?
+  womenSpecificInfo  String?
+  events             Event[]
+  xrays              Xray[] // Add this line to establish the relation with Xray
+}
+
+model Xray {
+  id            Int      @id @default(autoincrement())
+  patientId     Int
+  datePerformed DateTime
+  findings      String
+  impression    String
+  imageUrl      String
+  patient       Patient  @relation(fields: [patientId], references: [id])
+}
+
+model Backup {
+  id        String   @id @default(uuid())
+  fileName  String
+  size      Int
+  createdAt DateTime @default(now())
+}
