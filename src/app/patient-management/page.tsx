@@ -7,6 +7,7 @@ import { Patient, Xray, Appointment } from '@/shared/types';
 import { formatDate } from '@/shared/utils';
 import PatientModal from "@/components/Modals/PatientModal";
 import FullScreenXrayModal from "@/components/Modals/FullScreenXrayModal";
+import {Button} from "@/components/ui/button";
 
 const PatientList: React.FC = () => {
     const { isAuthenticated } = useAuth();
@@ -23,6 +24,8 @@ const PatientList: React.FC = () => {
     const [xrays, setXrays] = useState<Xray[]>([]);
     const [selectedXray, setSelectedXray] = useState<Xray | null>(null);
     const [isXrayModalOpen, setIsXrayModalOpen] = useState(false);
+
+
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -90,7 +93,10 @@ const PatientList: React.FC = () => {
                 throw new Error('Failed to fetch patient appointments');
             }
             const data = await response.json();
-            setAppointments(data.filter((appointment: Appointment) => appointment.patientId === patientId));
+            console.log('Raw appointment data:', data); // Debugging: Ham veriyi logla
+            const filteredAppointments = data.filter((appointment: Appointment) => appointment.patientId === patientId);
+            console.log('Filtered appointments:', filteredAppointments); // Debugging: Filtrelenmiş randevuları logla
+            setAppointments(filteredAppointments);
         } catch (error) {
             console.error('Error fetching patient appointments:', error);
             setAppointments([]);
@@ -193,14 +199,9 @@ const PatientList: React.FC = () => {
 
     return (
         <div className="p-6 min-h-screen">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Hasta Yönetimi</h1>
-                <button
-                    onClick={() => router.push('/addpatient')}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
-                >
-                    Hasta Ekle
-                </button>
+            <div className="flex flex-col md:flex-row md:items-center mb-6">
+                <h1 className="text-2xl font-bold mb-4 md:mb-0 md:mr-6">Hasta Yönetimi</h1>
+                <Button onClick={() => router.push('/addpatient')}>Hasta Ekle</Button>
             </div>
 
             <div className="mb-4">

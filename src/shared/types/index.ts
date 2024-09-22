@@ -36,7 +36,9 @@ export interface Xray {
 export interface Appointment {
     id: number;
     title: string;
-    date: string;
+    start: string;
+    end: string;
+    color: string;
     patientId: number;
 }
 

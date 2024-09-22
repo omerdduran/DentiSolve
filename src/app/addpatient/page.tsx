@@ -35,10 +35,9 @@ const AddPatient: React.FC = () => {
 
             alert('Hasta başarıyla eklendi')
             console.log('Hasta başarıyla eklendi');
-            // router.push('/patients'); // Next.js kullanıyorsanız
+            // router.push('/patients');
         } catch (error) {
             console.error('Hata:', error);
-            // Hata durumunda kullanıcıya bilgi verme
         }
     };
 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button"
 import {Patient, Xray} from "@/shared/types";
 import XrayModal from "@/components/Modals/XrayModal";
 
@@ -113,18 +114,17 @@ export default function XrayManagement() {
 
     const xrayList = useMemo(() => {
         return filteredXrays.map(xray => (
-            <div key={xray.id} className="border p-4 rounded shadow">
+            <div
+                key={xray.id}
+                className="border p-4 rounded shadow"
+                onClick={() => handleEditXray(xray)}
+            >
                 <h3 className="font-bold">{xray.patient.firstName} {xray.patient.lastName}</h3>
                 <p>Tarih: {new Date(xray.datePerformed).toLocaleDateString()}</p>
-                <button
-                    onClick={() => handleEditXray(xray)}
-                    className="mt-2 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                >
-                    Görüntüle/Düzenle
-                </button>
             </div>
         ));
     }, [filteredXrays, handleEditXray]);
+
 
     if (isLoading) {
         return <div className="text-center mt-8">X-ray yükleniyor...</div>;
@@ -138,12 +138,7 @@ export default function XrayManagement() {
         <div className="p-6 min-h-screen">
             <div className='flex flex-col md:flex-row md:items-center mb-6'>
                 <h1 className="text-2xl font-bold mb-4 md:mb-0 md:mr-6">X-ray Yönetimi</h1>
-                <button
-                    onClick={handleAddXray}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center transition duration-300 ease-in-out transform hover:scale-105 shadow-lg mt-4 md:mt-0"
-                >
-                    Yeni X-ray Ekle
-                </button>
+                <Button onClick={handleAddXray}>Yeni X-ray Ekle</Button>
             </div>
             <div className="flex-grow md:mr-4">
                 <input
@@ -154,7 +149,7 @@ export default function XrayManagement() {
                     className="w-full px-3 py-2 border rounded-lg"
                 />
             </div>
-            {error && <p className="text-red-500 mb-4">{error}</p>}
+            {error  && <p className="text-red-500 mb-4">{error}</p>}
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 pt-4">
                 {xrayList}
             </div>
