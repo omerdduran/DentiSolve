@@ -20,14 +20,8 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import {PRESET_COLORS} from "@/shared/utils";
 
-const PRESET_COLORS = [
-    { name: 'Red', value: '#FF0000' },
-    { name: 'Blue', value: '#0000FF' },
-    { name: 'Green', value: '#00FF00' },
-    { name: 'Yellow', value: '#FFFF00' },
-    { name: 'Purple', value: '#800080' },
-];
 
 const EventForm: React.FC = () => {
     const [formData, setFormData] = useState({

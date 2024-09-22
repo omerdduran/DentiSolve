@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DefaultCalendar from "@/components/CalendarViews/DefaultCalendar";
 import EventForm from "@/components/EventForm";
 import { useAuth } from '../../../context/AuthContext';
+import { Plus, X } from 'lucide-react';
 
 export default function CalendarPage() {
     const { isAuthenticated } = useAuth();
     const router = useRouter();
+    const [showEventForm, setShowEventForm] = useState(false);
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -24,15 +26,36 @@ export default function CalendarPage() {
         );
     }
 
+    const toggleEventForm = () => {
+        setShowEventForm(!showEventForm);
+    };
+
     return (
-        <main className="flex flex-col min-h-screen items-center p-4 md:p-8 lg:p-12">
-            <h1 className="text-2xl md:text-3xl font-bold mb-6">Takvim</h1>
-            <div className="w-full max-w-4xl">
-                <EventForm />
-                <div className="mt-8">
-                    <DefaultCalendar />
-                </div>
+        <main className="flex flex-col items-center p-4 md:p-8 lg:p-12 relative">
+            <div className="w-full max-w-7xl">
+                <DefaultCalendar />
             </div>
+            <button
+                onClick={toggleEventForm}
+                className="fixed bottom-4 right-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-3 shadow-lg transition-colors duration-200"
+                aria-label="Add Event"
+            >
+                <Plus size={24} />
+            </button>
+            {showEventForm && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg max-w-3xl p-11 w-full relative">
+                        <button
+                            onClick={toggleEventForm}
+                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                            aria-label="Close"
+                        >
+                            <X size={24} />
+                        </button>
+                        <EventForm />
+                    </div>
+                </div>
+            )}
         </main>
     );
 }

@@ -1,63 +1,63 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import Calendar from '@fullcalendar/react';
+import React, { useState, useEffect } from 'react';
+import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import listPlugin from '@fullcalendar/list';
-import { Patient, Event } from '@/shared/types';
-import { PRESET_COLORS } from "@/shared/utils";
+import { EventInput, EventContentArg, CalendarOptions } from '@fullcalendar/core';
 import EventModal from "@/components/Modals/EventModal";
+import { Patient } from "@/shared/types";
+
+interface ExtendedEventInput extends EventInput {
+    extendedProps?: {
+        patientId?: number;
+    };
+}
 
 const DefaultCalendar: React.FC = () => {
-    const [events, setEvents] = useState<Event[]>([]);
+    const [events, setEvents] = useState<ExtendedEventInput[]>([]);
     const [patients, setPatients] = useState<{ [key: number]: Patient }>({});
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalData, setModalData] = useState<any>(null);
+    const [selectedEvent, setSelectedEvent] = useState<ExtendedEventInput | null>(null);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isMobile, setIsMobile] = useState<boolean>(false);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
-    const calendarRef = useRef<any>(null);
 
     useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 640);
-        handleResize();
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    useEffect(() => {
-        const loadData = async () => {
-            setIsLoading(true);
+        const fetchData = async () => {
+            setLoading(true);
             setError(null);
             try {
                 await Promise.all([fetchEvents(), fetchPatients()]);
             } catch (err) {
-                setError('Failed to load data. Please try again later.');
+                setError('Veri yüklenemedi. Lütfen daha sonra tekrar deneyin.');
             } finally {
-                setIsLoading(false);
+                setLoading(false);
             }
         };
 
-        loadData();
+        fetchData();
     }, []);
 
     const fetchEvents = async () => {
         try {
             const response = await fetch('/api/events');
-            if (!response.ok) throw new Error('Failed to fetch events');
+            if (!response.ok) throw new Error('Randevular alınamadı');
             const data = await response.json();
-            setEvents(data);
+            setEvents(data.map((event: any) => ({
+                ...event,
+                extendedProps: { patientId: event.patientId }
+            })));
         } catch (error) {
-            throw new Error('Failed to load events');
+            console.error('Olayları getirirken hata oluştu:', error);
+            throw error;
         }
     };
 
     const fetchPatients = async () => {
         try {
             const response = await fetch('/api/patients');
-            if (!response.ok) throw new Error('Failed to fetch patients');
+            if (!response.ok) throw new Error('Hastalar getirilemedi');
             const data: Patient[] = await response.json();
             const patientMap = data.reduce((acc, patient) => {
                 acc[patient.id] = patient;
@@ -65,64 +65,166 @@ const DefaultCalendar: React.FC = () => {
             }, {} as { [key: number]: Patient });
             setPatients(patientMap);
         } catch (error) {
-            throw new Error('Failed to load patient information');
+            console.error('Hastaları getirirken hata oluştu:', error);
+            throw error;
         }
     };
 
-    const handleEventUpdate = useCallback((updatedEvent: Event) => {
-        setEvents(prevEvents => prevEvents.map(event =>
-            event.id === updatedEvent.id ? updatedEvent : event
-        ));
-        setIsModalOpen(false);
-    }, []);
-
-    const handleEventClick = useCallback((info: any) => {
-        const event = events.find(e => e.id.toString() === info.event.id);
-        if (event) {
-            const patient = patients[event.patientId];
-            setModalData({
-                title: event.title,
-                start: new Date(event.start).toLocaleString('tr-TR'),
-                end: new Date(event.end).toLocaleString('tr-TR'),
-                patientName: patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown Patient',
-                color: event.color,
-            });
-            setIsModalOpen(true);
-        }
-    }, [events, patients]);
-
-    const handleDateClick = useCallback((info: any) => {
-        setModalData({ title: 'Yeni Etkinlik', start: info.dateStr, end: info.dateStr, color: PRESET_COLORS[0].value });
+    const handleDateSelect = (selectInfo: any) => {
+        setSelectedEvent({
+            start: selectInfo.startStr,
+            end: selectInfo.endStr,
+            allDay: selectInfo.allDay,
+        });
         setIsModalOpen(true);
-    }, []);
+    };
 
-    if (isLoading) {
-        return <div className="flex justify-center items-center h-screen">Loading...</div>;
-    }
+    const handleEventClick = (clickInfo: any) => {
+        setSelectedEvent(clickInfo.event);
+        setIsModalOpen(true);
+    };
 
+    const handleEventUpdate = async (updatedEvent: ExtendedEventInput) => {
+        if (updatedEvent.id) {
+            if ('deleted' in updatedEvent && updatedEvent.deleted) {
+                setEvents(events.filter(e => e.id !== updatedEvent.id));
+            } else {
+                setEvents(events.map(e => e.id === updatedEvent.id ? updatedEvent : e));
+            }
+        } else {
+            setEvents([...events, updatedEvent]);
+        }
+        await fetchEvents();
+    };
+
+    const eventContent = (eventInfo: EventContentArg) => {
+        const { event } = eventInfo;
+        const patientId = event.extendedProps?.patientId as number;
+        const patient = patients[patientId];
+        const patientName = patient ? `${patient.firstName} ${patient.lastName}` : 'Bilinmeyen Hasta';
+
+        return (
+            <div className="event-content">
+                <div className="event-title">{event.title}</div>
+                <div className="event-patient">{patientName}</div>
+            </div>
+        );
+    };
+
+    const calendarOptions: CalendarOptions = {
+        plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+        headerToolbar: {
+            left: 'prev,next',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        initialView: 'dayGridMonth',
+        editable: true,
+        selectable: true,
+        selectMirror: true,
+        dayMaxEvents: true,
+        weekends: true,
+        events: events,
+        select: handleDateSelect,
+        eventClick: handleEventClick,
+        eventContent: eventContent,
+        eventDisplay: "block",
+        eventTimeFormat: {
+            hour: 'numeric',
+            minute: '2-digit',
+            meridiem: 'short'
+        },
+        displayEventTime: true,
+        displayEventEnd: true,
+        nextDayThreshold: "00:00:00",
+        eventOrder: "start,-duration,allDay,title",
+        eventOrderStrict: false,
+        progressiveEventRendering: true,
+        buttonText: {
+            today: 'Bugün',
+            month: 'Ay',
+            week: 'Hafta',
+            day: 'Gün',
+        },
+        locale: 'tr',
+        nowIndicator: true,
+        firstDay: 1,
+        slotMinTime: '08:00:00',
+        slotMaxTime: '24:00:00',
+        height: 'auto',
+        aspectRatio: 1.8,
+        themeSystem: 'standard',
+    };
+
+    if (loading) return <div>Yükleniyor...</div>;
+    if (error) return <div>Hata: {error}</div>;
 
     return (
-        <div className="w-full max-w-6xl mx-auto px-4 py-2">
-            {error && <div className="text-red-500 mb-4 p-2 bg-red-100 rounded">{error}</div>}
-            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-                <div className="p-4 border-b flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-gray-800">Randevu Takvimi</h2>
-                </div>
-                <div className="p-4">
-                    <Calendar
-                        ref={calendarRef}
-                        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
-                        initialView={isMobile ? "timeGridDay" : "dayGridMonth"}
-                        // @ts-ignore
-                        events={events}
-                        eventClick={handleEventClick}
-                        dateClick={handleDateClick}
-                        locale="tr"
-                        nowIndicator={true}
-                    />
-                </div>
-            </div>
-            {isModalOpen && <EventModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onEventUpdate={handleEventUpdate}/>}
+        <div className="calendar-container">
+            <style jsx global>{`
+                .calendar-container {
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                }
+                .fc {
+                    --fc-border-color: #e0e0e0;
+                    --fc-button-bg-color: #f0f0f0;
+                    --fc-button-border-color: #e0e0e0;
+                    --fc-button-text-color: #333;
+                    --fc-button-hover-bg-color: #e0e0e0;
+                    --fc-button-hover-border-color: #d0d0d0;
+                    --fc-button-active-bg-color: #d0d0d0;
+                    --fc-button-active-border-color: #c0c0c0;
+                }
+                .fc .fc-button {
+                    font-weight: 400;
+                    text-transform: capitalize;
+                    border-radius: 6px;
+                }
+                .fc .fc-button-primary:not(:disabled).fc-button-active,
+                .fc .fc-button-primary:not(:disabled):active {
+                    background-color: #007aff;
+                    border-color: #007aff;
+                    color: #fff;
+                }
+                .fc-theme-standard td, .fc-theme-standard th {
+                    border-color: #f0f0f0;
+                }
+                .fc .fc-day-other .fc-daygrid-day-top {
+                    opacity: 0.5;
+                }
+                .fc .fc-daygrid-day-number {
+                    font-size: 0.9em;
+                    padding: 4px 6px;
+                }
+                .fc .fc-col-header-cell-cushion {
+                    font-weight: 500;
+                }
+                .event-content {
+                    font-size: 0.8em;
+                    line-height: 1.2;
+                    padding: 2px 4px;
+                }
+                .event-title {
+                    font-weight: 500;
+                }
+                .event-patient {
+                    font-style: italic;
+                    opacity: 0.8;
+                }
+            `}</style>
+            <FullCalendar {...calendarOptions} />
+            {isModalOpen && (
+                <EventModal
+                    isOpen={isModalOpen}
+                    onClose={() => {
+                        setIsModalOpen(false);
+                        setSelectedEvent(null);
+                    }}
+                    // @ts-ignore
+                    event={selectedEvent}
+                    onEventUpdate={handleEventUpdate}
+                />
+            )}
         </div>
     );
 };

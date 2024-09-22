@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Patient } from "@/shared/types";
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown, CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import { format } from "date-fns"
 import {
     Command,
     CommandEmpty,
@@ -18,6 +20,8 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import {PRESET_COLORS} from "@/shared/utils";
+
 
 interface EventModalProps {
     isOpen: boolean;
@@ -39,7 +43,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
         title: '',
         start: '',
         end: '',
-        color: '#3788d8',
+        color: PRESET_COLORS[0].value,
         patientId: 0,
     });
     const [patients, setPatients] = useState<Patient[]>([]);
@@ -47,35 +51,51 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
     const [error, setError] = useState<string | null>(null);
     const [open, setOpen] = React.useState(false);
     const [selectedPatient, setSelectedPatient] = React.useState<Patient | null>(null);
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
     useEffect(() => {
         if (isOpen) {
             fetchPatients();
-            if (event) {
-                setFormData({
-                    id: event.id,
-                    title: event.title,
-                    start: formatDateTimeForInput(event.start),
-                    end: formatDateTimeForInput(event.end),
-                    color: event.color,
-                    patientId: event.patientId,
-                });
-                const patient = patients.find(p => p.id === event.patientId);
-                setSelectedPatient(patient || null);
-            } else {
-                // Reset form for new event
-                setFormData({
-                    id: undefined,
-                    title: '',
-                    start: '',
-                    end: '',
-                    color: '#3788d8',
-                    patientId: 0,
-                });
-                setSelectedPatient(null);
-            }
         }
-    }, [isOpen, event, patients]);
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (isOpen && event) {
+            const start = new Date(event.start);
+            const end = new Date(event.end);
+            setFormData({
+                id: event.id,
+                title: event.title,
+                start: formatTime(start),
+                end: formatTime(end),
+                color: event.color,
+                patientId: event.patientId,
+            });
+            setStartDate(start);
+            setEndDate(end);
+        } else {
+            // Reset form for new event
+            setFormData({
+                id: undefined,
+                title: '',
+                start: '',
+                end: '',
+                color: PRESET_COLORS[0].value,
+                patientId: 0,
+            });
+            setStartDate(undefined);
+            setEndDate(undefined);
+            setSelectedPatient(null);
+        }
+    }, [isOpen, event]);
+
+    useEffect(() => {
+        if (patients.length > 0 && formData.patientId) {
+            const patient = patients.find(p => p.id === formData.patientId);
+            setSelectedPatient(patient || null);
+        }
+    }, [patients, formData.patientId]);
 
     const fetchPatients = async () => {
         setIsLoading(true);
@@ -97,8 +117,12 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const formatDateTimeForInput = (dateString: string): string => {
-        return new Date(dateString).toISOString().slice(0, 16);
+    const formatTime = (date: Date): string => {
+        return date.toTimeString().slice(0, 5); // Returns time in HH:MM format
+    };
+
+    const handleColorChange = (color: string) => {
+        setFormData(prev => ({ ...prev, color }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -107,16 +131,28 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
         setIsLoading(true);
 
         try {
+            const startDateTime = new Date(startDate!);
+            const endDateTime = new Date(endDate!);
+            const [startHours, startMinutes] = formData.start.split(':');
+            const [endHours, endMinutes] = formData.end.split(':');
+
+            startDateTime.setHours(parseInt(startHours), parseInt(startMinutes));
+            endDateTime.setHours(parseInt(endHours), parseInt(endMinutes));
+
+            const eventData = {
+                ...formData,
+                start: startDateTime.toISOString(),
+                end: endDateTime.toISOString(),
+                patientId: selectedPatient?.id
+            };
+
             const url = formData.id ? `/api/events/${formData.id}` : '/api/events/create';
             const method = formData.id ? 'PUT' : 'POST';
 
             const response = await fetch(url, {
                 method: method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...formData,
-                    patientId: selectedPatient?.id
-                }),
+                body: JSON.stringify(eventData),
             });
 
             if (!response.ok) throw new Error('Failed to save event');
@@ -175,9 +211,34 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                         />
                     </div>
                     <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1" htmlFor="start">Start</label>
+                        <label className="block text-sm font-medium mb-1">Start Date</label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !startDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {startDate ? format(startDate, "PPP") : <span>Select date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={startDate}
+                                    onSelect={setStartDate}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium mb-1" htmlFor="start">Start Time</label>
                         <input
-                            type="datetime-local"
+                            type="time"
                             id="start"
                             name="start"
                             value={formData.start}
@@ -187,9 +248,34 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                         />
                     </div>
                     <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1" htmlFor="end">End</label>
+                        <label className="block text-sm font-medium mb-1">End Date</label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !endDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {endDate ? format(endDate, "PPP") : <span>Select date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={endDate}
+                                    onSelect={setEndDate}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium mb-1" htmlFor="end">End Time</label>
                         <input
-                            type="datetime-local"
+                            type="time"
                             id="end"
                             name="end"
                             value={formData.end}
@@ -226,6 +312,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                                                     value={`${patient.firstName} ${patient.lastName}`}
                                                     onSelect={() => {
                                                         setSelectedPatient(patient);
+                                                        setFormData(prev => ({ ...prev, patientId: patient.id }));
                                                         setOpen(false);
                                                     }}
                                                 >
@@ -245,15 +332,21 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                         </Popover>
                     </div>
                     <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1" htmlFor="color">Color</label>
-                        <input
-                            type="color"
-                            id="color"
-                            name="color"
-                            value={formData.color}
-                            onChange={handleInputChange}
-                            className="w-full h-10 px-3 py-2 border rounded-md"
-                        />
+                        <label className="block text-sm font-medium mb-1">Event Color</label>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                            {PRESET_COLORS.map((preset) => (
+                                <button
+                                    key={preset.value}
+                                    type="button"
+                                    onClick={() => handleColorChange(preset.value)}
+                                    className={`w-8 h-8 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                                        formData.color === preset.value ? 'ring-2 ring-offset-2 ring-blue-500' : ''
+                                    }`}
+                                    style={{ backgroundColor: preset.value }}
+                                    title={preset.name}
+                                />
+                            ))}
+                        </div>
                     </div>
                     <div className="flex justify-between">
                         <button
@@ -276,7 +369,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                             <button
                                 type="button"
                                 onClick={handleDelete}
-                                className="w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                                className='w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600'
                                 disabled={isLoading}
                             >
                                 Delete Event

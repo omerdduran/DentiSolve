@@ -37,7 +37,7 @@ export default function RootLayout({children}: { children: React.ReactNode }) {
         <html lang="en">
         <Head>
             <title>DentiSolve</title>
-            <link rel="icon" href="/favicon.ico" />
+            <link rel="icon" href="/src/app/favicon.ico" />
             <meta name="viewport" content="width=device-width, initial-scale=1" />
         </Head>
         <body className={inter.className}>
