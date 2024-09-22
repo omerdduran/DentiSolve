@@ -41,7 +41,7 @@ node_modules
 prisma/migrations/
 
 # Ignore the dev database
-prisma/dev.db
+prisma/dev.dbg
 public/uploads/
 
 
