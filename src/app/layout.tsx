@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import Sidebar from "@/components/Navigation/SideBar";
 import Head from "next/head";
 import BottomNav from "@/components/Navigation/BottomNav";
+import {Toaster} from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -43,6 +44,7 @@ export default function RootLayout({children}: { children: React.ReactNode }) {
         <body className={inter.className}>
         <AuthProvider>
             <MainContent>{children}</MainContent>
+            <Toaster />
         </AuthProvider>
         </body>
         </html>

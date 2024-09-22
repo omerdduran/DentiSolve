@@ -1,177 +1,230 @@
-import React, { useState, useEffect } from 'react';
-import PhoneInput from 'react-phone-input-2';
-import 'react-phone-input-2/lib/plain.css';
-import {treatmentOptions} from "@/shared/utils";
-
-interface PatientFormProps {
-    initialData?: Partial<PatientFormData>;
-    onSubmit: (formData: PatientFormData) => void;
-    submitButtonText?: string;
-}
+import React, { useState } from 'react';
+import { format } from "date-fns";
+import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { PhoneInput } from "@/components/ui/phone-input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 export interface PatientFormData {
-    id?: number;
     firstName: string;
     lastName: string;
-    dateOfBirth: string;
+    dateOfBirth: Date | undefined;
     homePhone: string;
     currentTreatment: string;
     medicalHistory: string;
-    surgeryHistory: string;
     anyMedicalProblems: string;
     womenSpecificInfo: string;
 }
 
-export interface Patient extends PatientFormData {
-    id: number;
+interface PatientFormProps {
+    initialData?: Partial<PatientFormData>;
+    onSubmit: (formData: PatientFormData) => Promise<void>;
+    submitButtonText?: string;
+    isLoading?: boolean;
 }
 
-
-const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, submitButtonText = 'Hasta Ekle' }) => {
+const PatientForm: React.FC<PatientFormProps> = ({
+                                                     initialData,
+                                                     onSubmit,
+                                                     submitButtonText = 'Hasta Ekle',
+                                                     isLoading = false
+                                                 }) => {
     const [formData, setFormData] = useState<PatientFormData>({
-        firstName: '',
-        lastName: '',
-        dateOfBirth: '',
-        homePhone: '',
-        currentTreatment: '',
-        medicalHistory: '',
-        surgeryHistory: '',
-        anyMedicalProblems: '',
-        womenSpecificInfo: '',
+        firstName: initialData?.firstName || '',
+        lastName: initialData?.lastName || '',
+        dateOfBirth: initialData?.dateOfBirth,
+        homePhone: initialData?.homePhone || '',
+        currentTreatment: initialData?.currentTreatment || '',
+        medicalHistory: initialData?.medicalHistory || '',
+        anyMedicalProblems: initialData?.anyMedicalProblems || '',
+        womenSpecificInfo: initialData?.womenSpecificInfo || '',
     });
 
-    useEffect(() => {
-        if (initialData) {
-            setFormData(prevData => ({ ...prevData, ...initialData }));
-        }
-    }, [initialData]);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData(prevData => ({ ...prevData, [name]: value }));
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleDateChange = (date: Date | undefined) => {
+        setFormData(prev => ({ ...prev, dateOfBirth: date }));
     };
 
     const handlePhoneChange = (value: string) => {
-        setFormData(prevData => ({ ...prevData, homePhone: value }));
+        setFormData(prev => ({ ...prev, homePhone: value }));
     };
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        onSubmit(formData);
+        await onSubmit(formData);
+    };
+
+    // Custom calendar component with year selection
+    const CustomCalendar = ({ selected, ...props }: any) => {
+        const [year, setYear] = useState(selected?.getFullYear() || new Date().getFullYear());
+
+        const years = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
+
+        return (
+            <div className="p-3">
+                <div className="flex justify-center items-center gap-1 mb-3">
+                    <Button
+                        variant="outline"
+                        className="h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+                        onClick={() => setYear(year - 1)}
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Select
+                        value={year.toString()}
+                        onValueChange={(value) => setYear(parseInt(value))}
+                    >
+                        <SelectTrigger className="w-[100px]">
+                            <SelectValue>{year}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                            {years.map((y) => (
+                                <SelectItem key={y} value={y.toString()}>
+                                    {y}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Button
+                        variant="outline"
+                        className="h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+                        onClick={() => setYear(year + 1)}
+                    >
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
+                </div>
+                <Calendar
+                    {...props}
+                    mode="single"
+                    selected={selected}
+                    month={new Date(year, selected?.getMonth() || 0)}
+                    onMonthChange={(newMonth) => setYear(newMonth.getFullYear())}
+                />
+            </div>
+        );
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Ad</label>
-                    <input
-                        type="text"
+                    <Input
                         name="firstName"
                         value={formData.firstName}
                         onChange={handleChange}
-                        required
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
+                        className="mt-1"
                     />
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Soyad</label>
-                    <input
-                        type="text"
+                    <Input
                         name="lastName"
                         value={formData.lastName}
                         onChange={handleChange}
-                        required
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
+                        className="mt-1"
                     />
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Doğum Tarihi</label>
-                    <input
-                        type="date"
-                        name="dateOfBirth"
-                        value={formData.dateOfBirth}
-                        onChange={handleChange}
-                        required
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
-                    />
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full mt-1 pl-3 text-left font-normal",
+                                    !formData.dateOfBirth && "text-muted-foreground"
+                                )}
+                            >
+                                {formData.dateOfBirth ? (
+                                    format(formData.dateOfBirth, "PPP")
+                                ) : (
+                                    <span>Bir tarih seçin</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <CustomCalendar
+                                selected={formData.dateOfBirth}
+                                onSelect={handleDateChange}
+                                disabled={(date) =>
+                                    date > new Date() || date < new Date("1900-01-01")
+                                }
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Telefon numarası</label>
+                    <label className="block text-sm font-medium text-gray-700">Telefon Numarası</label>
                     <PhoneInput
-                        country={'tr'}
                         value={formData.homePhone}
                         onChange={handlePhoneChange}
-                        inputProps={{
-                            name: 'homePhone',
-                            required: true,
-                            autoFocus: true,
-                        }}
-                    />
-                </div>
-                <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700">Mevcut Tedavi veya İlaçlar</label>
-                    <select
-                        name="currentTreatment"
-                        value={formData.currentTreatment}
-                        onChange={handleChange}
-                        required
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
-                    >
-                        <option value="">Seçiniz</option>
-                        {treatmentOptions.map((option, index) => (
-                            <option key={index} value={option}>{option}</option>
-                        ))}
-                    </select>
-                </div>
-                <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700">Tıbbi Geçmiş</label>
-                    <textarea
-                        name="medicalHistory"
-                        value={formData.medicalHistory}
-                        onChange={handleChange}
-                        rows={3}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
-                    />
-                </div>
-                <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700">Ameliyat Geçmişi</label>
-                    <textarea
-                        name="surgeryHistory"
-                        value={formData.surgeryHistory}
-                        onChange={handleChange}
-                        rows={3}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
-                    />
-                </div>
-                <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700">Diğer Tıbbi Sorunlar</label>
-                    <textarea
-                        name="anyMedicalProblems"
-                        value={formData.anyMedicalProblems}
-                        onChange={handleChange}
-                        rows={3}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
-                    />
-                </div>
-                <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700">Kadın Sağlığı (Gebelik, Düşük, Menstruasyon, Menopoz)</label>
-                    <textarea
-                        name="womenSpecificInfo"
-                        value={formData.womenSpecificInfo}
-                        onChange={handleChange}
-                        rows={3}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
+                        defaultCountry="TR"
+                        className="mt-1"
                     />
                 </div>
             </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Mevcut Tedavi veya İlaçlar</label>
+                <Textarea
+                    name="currentTreatment"
+                    value={formData.currentTreatment}
+                    onChange={handleChange}
+                    className="mt-1"
+                />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Tıbbi Geçmiş</label>
+                <Textarea
+                    name="medicalHistory"
+                    value={formData.medicalHistory}
+                    onChange={handleChange}
+                    className="mt-1"
+                />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Diğer Tıbbi Sorunlar</label>
+                <Textarea
+                    name="anyMedicalProblems"
+                    value={formData.anyMedicalProblems}
+                    onChange={handleChange}
+                    className="mt-1"
+                />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Kadın Sağlığı (Gebelik, Düşük, Menstruasyon, Menopoz)</label>
+                <Textarea
+                    name="womenSpecificInfo"
+                    value={formData.womenSpecificInfo}
+                    onChange={handleChange}
+                    className="mt-1"
+                />
+            </div>
             <div className="flex justify-end">
-                <button
-                    type="submit"
-                    className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm hover:bg-blue-600"
-                >
+                <Button type="submit" disabled={isLoading}>
                     {submitButtonText}
-                </button>
+                </Button>
             </div>
         </form>
     );

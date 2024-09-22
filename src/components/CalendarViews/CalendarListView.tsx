@@ -96,6 +96,7 @@ const SimpleCalendarListView: React.FC = () => {
             end: 'next'
         },
         height: 'auto',
+        firstDay: 1,
         eventClick: handleEventClick,
         noEventsContent: 'Görüntülenecek etkinlik yok',
         buttonText: {

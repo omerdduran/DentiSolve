@@ -1,26 +1,26 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import 'react-phone-input-2/lib/plain.css'
 import { useAuth } from '../../../context/AuthContext';
 import PatientForm, { PatientFormData } from '@/components/Forms/PatientForm';
-
+import { useToast } from "@/components/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 
 const AddPatient: React.FC = () => {
     const { isAuthenticated } = useAuth();
     const router = useRouter();
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(false);
 
-    useEffect(() => {
-        if (!isAuthenticated) {
-            router.push('/login');
-        }
-    }, [isAuthenticated, router]);
-
+    if (!isAuthenticated) {
+        router.push('/login');
+        return null;
+    }
 
     const handleSubmit = async (formData: PatientFormData) => {
+        setIsLoading(true);
         try {
-            // API'ye veri gönderme işlemi
             const response = await fetch('/api/patients', {
                 method: 'POST',
                 headers: {
@@ -33,24 +33,37 @@ const AddPatient: React.FC = () => {
                 throw new Error('Hasta eklenirken bir hata oluştu');
             }
 
-            alert('Hasta başarıyla eklendi')
-            console.log('Hasta başarıyla eklendi');
-            // router.push('/patients');
+            toast({
+                title: "Başarılı!",
+                description: "Hasta başarıyla eklendi.",
+                className: "bg-green-500",
+            });
+
+            router.push('/patient-management');
         } catch (error) {
             console.error('Hata:', error);
+            toast({
+                title: "Hata!",
+                description: "Hasta eklenirken bir sorun oluştu.",
+                variant: "destructive",  // Kırmızı toast için
+            });
+        } finally {
+            setIsLoading(false);
         }
     };
 
-
-    if (!isAuthenticated) {
-        return null;
-    }
-
     return (
-        <div className="max-w-4xl mx-auto p-4">
-            <h1 className="text-2xl font-bold mb-4">Yeni Hasta Ekle</h1>
-            <PatientForm onSubmit={handleSubmit} />
-        </div>
+        <>
+            <div className="max-w-4xl mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">Yeni Hasta Ekle</h1>
+                <PatientForm
+                    onSubmit={handleSubmit}
+                    submitButtonText={isLoading ? "Ekleniyor..." : "Hasta Ekle"}
+                    isLoading={isLoading}
+                />
+            </div>
+            <Toaster />
+        </>
     );
 };
 
