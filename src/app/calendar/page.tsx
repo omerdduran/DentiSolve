@@ -32,7 +32,7 @@ export default function CalendarPage() {
 
     return (
         <main className="flex flex-col items-center p-4 md:p-8 lg:p-12 relative">
-            <div className="w-full max-w-7xl">
+            <div className="w-full max-w-7xl min-h-dvh">
                 <DefaultCalendar />
             </div>
             <button

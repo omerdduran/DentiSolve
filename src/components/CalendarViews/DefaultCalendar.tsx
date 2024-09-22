@@ -212,6 +212,7 @@ const DefaultCalendar: React.FC = () => {
                     opacity: 0.8;
                 }
             `}</style>
+            
             <FullCalendar {...calendarOptions} />
             {isModalOpen && (
                 <EventModal

@@ -123,6 +123,7 @@ const PatientForm: React.FC<PatientFormProps> = ({
         );
     };
 
+
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -167,6 +168,7 @@ const PatientForm: React.FC<PatientFormProps> = ({
                             <CustomCalendar
                                 selected={formData.dateOfBirth}
                                 onSelect={handleDateChange}
+                                // @ts-ignore
                                 disabled={(date) =>
                                     date > new Date() || date < new Date("1900-01-01")
                                 }

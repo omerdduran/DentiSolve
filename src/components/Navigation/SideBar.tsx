@@ -22,7 +22,7 @@ const Sidebar = () => {
         >
             <div className="h-full px-3 py-4 overflow-y-auto flex flex-col">
                 <div className="mb-8 p-4 px-0 border-b border-gray-200 dark:border-gray-700">
-                    <h1 className="text-3xl font-raleway text-transparent bg-clip-text text-black tracking-wide">
+                    <h1 className="text-3xl font-raleway bg-clip-text text-black tracking-wide">
                         Ilhan Clinic
                     </h1>
                 </div>
