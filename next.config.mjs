@@ -13,13 +13,11 @@ const nextConfig = {
             }
         ]
     },
-    // Dosya yükleme için body parser limitini artır
-    api: {
+    serverRuntimeConfig: {
         bodyParser: {
-            sizeLimit: '10mb', // veya ihtiyacınıza göre ayarlayın
+            sizeLimit: '10mb',
         },
     },
-    // Dosya sistemi modülünü webpack ile uyumlu hale getir
     webpack: (config) => {
         config.resolve.fallback = {
             ...config.resolve.fallback,
@@ -27,7 +25,6 @@ const nextConfig = {
         };
         return config;
     },
-    // Diğer konfigürasyonlar...
 };
 
 export default nextConfig;
