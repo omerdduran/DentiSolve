@@ -16,20 +16,12 @@ const ModalWrapper: React.FC<ModalWrapperProps> = ({ isOpen, onClose, children }
             }
         };
 
-        const handleClickOutside = (event: MouseEvent) => {
-            if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-                onClose();
-            }
-        };
-
         if (isOpen) {
             document.addEventListener('keydown', handleEscape);
-            document.addEventListener('mousedown', handleClickOutside);
         }
 
         return () => {
             document.removeEventListener('keydown', handleEscape);
-            document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [isOpen, onClose]);
 

@@ -7,7 +7,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import { Patient, Event } from '@/shared/types';
-import {PRESET_COLORS} from "@/shared/utils";
+import { PRESET_COLORS } from "@/shared/utils";
 import EventModal from "@/components/Modals/EventModal";
 
 const DefaultCalendar: React.FC = () => {
@@ -17,6 +17,7 @@ const DefaultCalendar: React.FC = () => {
     const [modalData, setModalData] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
     const [isMobile, setIsMobile] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
     const calendarRef = useRef<any>(null);
 
     useEffect(() => {
@@ -27,8 +28,19 @@ const DefaultCalendar: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        fetchEvents();
-        fetchPatients();
+        const loadData = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                await Promise.all([fetchEvents(), fetchPatients()]);
+            } catch (err) {
+                setError('Failed to load data. Please try again later.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadData();
     }, []);
 
     const fetchEvents = async () => {
@@ -38,7 +50,7 @@ const DefaultCalendar: React.FC = () => {
             const data = await response.json();
             setEvents(data);
         } catch (error) {
-            setError('Failed to load events. Please try again later.');
+            throw new Error('Failed to load events');
         }
     };
 
@@ -53,9 +65,16 @@ const DefaultCalendar: React.FC = () => {
             }, {} as { [key: number]: Patient });
             setPatients(patientMap);
         } catch (error) {
-            setError('Failed to load patient information.');
+            throw new Error('Failed to load patient information');
         }
     };
+
+    const handleEventUpdate = useCallback((updatedEvent: Event) => {
+        setEvents(prevEvents => prevEvents.map(event =>
+            event.id === updatedEvent.id ? updatedEvent : event
+        ));
+        setIsModalOpen(false);
+    }, []);
 
     const handleEventClick = useCallback((info: any) => {
         const event = events.find(e => e.id.toString() === info.event.id);
@@ -76,6 +95,11 @@ const DefaultCalendar: React.FC = () => {
         setModalData({ title: 'Yeni Etkinlik', start: info.dateStr, end: info.dateStr, color: PRESET_COLORS[0].value });
         setIsModalOpen(true);
     }, []);
+
+    if (isLoading) {
+        return <div className="flex justify-center items-center h-screen">Loading...</div>;
+    }
+
 
     return (
         <div className="w-full max-w-6xl mx-auto px-4 py-2">
@@ -98,7 +122,7 @@ const DefaultCalendar: React.FC = () => {
                     />
                 </div>
             </div>
-            {isModalOpen && <EventModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} modalData={modalData} />}
+            {isModalOpen && <EventModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onEventUpdate={handleEventUpdate}/>}
         </div>
     );
 };

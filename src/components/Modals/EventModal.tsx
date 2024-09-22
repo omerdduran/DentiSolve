@@ -1,79 +1,88 @@
+"use client"
+
 import React, { useState, useEffect } from 'react';
-import ModalWrapper from './ModalWrapper';
-
-const PRESET_COLORS = [
-    { name: 'Kırmızı', value: '#FF0000' },
-    { name: 'Mavi', value: '#0000FF' },
-    { name: 'Yeşil', value: '#00FF00' },
-    { name: 'Sarı', value: '#FFFF00' },
-    { name: 'Mor', value: '#800080' },
-];
-
-interface Patient {
-    id: number;
-    firstName: string;
-    lastName: string;
-}
+import { Patient } from "@/shared/types";
+import { Check, ChevronsUpDown } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
 
 interface EventModalProps {
     isOpen: boolean;
     onClose: () => void;
-    modalData: {
-        id: number;
+    event: {
+        id?: number;
         title: string;
         start: string;
         end: string;
-        patientName: string;
-        patientId: number;
         color: string;
+        patientId: number;
     } | null;
     onEventUpdate: (updatedEvent: any) => void;
 }
 
-const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, modalData, onEventUpdate }) => {
+const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEventUpdate }) => {
     const [formData, setFormData] = useState({
-        id: 0,
+        id: undefined as number | undefined,
         title: '',
         start: '',
         end: '',
+        color: '#3788d8',
         patientId: 0,
-        patientName: '',
-        color: '',
     });
     const [patients, setPatients] = useState<Patient[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [open, setOpen] = React.useState(false);
+    const [selectedPatient, setSelectedPatient] = React.useState<Patient | null>(null);
 
     useEffect(() => {
         if (isOpen) {
             fetchPatients();
+            if (event) {
+                setFormData({
+                    id: event.id,
+                    title: event.title,
+                    start: formatDateTimeForInput(event.start),
+                    end: formatDateTimeForInput(event.end),
+                    color: event.color,
+                    patientId: event.patientId,
+                });
+                const patient = patients.find(p => p.id === event.patientId);
+                setSelectedPatient(patient || null);
+            } else {
+                // Reset form for new event
+                setFormData({
+                    id: undefined,
+                    title: '',
+                    start: '',
+                    end: '',
+                    color: '#3788d8',
+                    patientId: 0,
+                });
+                setSelectedPatient(null);
+            }
         }
-    }, [isOpen]);
-
-    useEffect(() => {
-        if (modalData) {
-            setFormData({
-                id: modalData.id,
-                title: modalData.title,
-                start: formatDateForDisplay(modalData.start),
-                end: formatDateForDisplay(modalData.end),
-                patientId: modalData.patientId,
-                patientName: modalData.patientName,
-                color: modalData.color,
-            });
-        }
-    }, [modalData]);
+    }, [isOpen, event, patients]);
 
     const fetchPatients = async () => {
         setIsLoading(true);
-        setError(null);
         try {
             const response = await fetch('/api/patients');
-            if (!response.ok) {
-                throw new Error('Failed to fetch patients');
-            }
+            if (!response.ok) throw new Error('Failed to fetch patients');
             const data = await response.json();
-            console.log('Fetched patients:', data);
             setPatients(data);
         } catch (error) {
             console.error('Error fetching patients:', error);
@@ -85,206 +94,198 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, modalData, onE
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        if (name === 'patientId') {
-            const selectedPatient = patients.find(p => p.id === Number(value));
-            setFormData(prev => ({
-                ...prev,
-                patientId: Number(value),
-                patientName: selectedPatient ? `${selectedPatient.firstName} ${selectedPatient.lastName}` : ''
-            }));
-        } else {
-            setFormData(prev => ({ ...prev, [name]: value }));
-        }
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const formatDateTimeForInput = (dateString: string): string => {
+        return new Date(dateString).toISOString().slice(0, 16);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
-
-        if (!formData.id) {
-            setError('Invalid event ID. Cannot update event.');
-            return;
-        }
-
-        const updatedEvent = {
-            ...formData,
-            start: formatDateForAPI(formData.start),
-            end: formatDateForAPI(formData.end),
-        };
+        setIsLoading(true);
 
         try {
-            const response = await fetch(`/api/events/${formData.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(updatedEvent),
+            const url = formData.id ? `/api/events/${formData.id}` : '/api/events/create';
+            const method = formData.id ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...formData,
+                    patientId: selectedPatient?.id
+                }),
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to update event');
-            }
+            if (!response.ok) throw new Error('Failed to save event');
 
-            const updatedData = await response.json();
-            onEventUpdate(updatedData);
+            const savedEvent = await response.json();
+            onEventUpdate(savedEvent);
             onClose();
         } catch (error) {
-            console.error('Error updating event:', error);
-            setError('Failed to update event. Please try again.');
+            console.error('Error saving event:', error);
+            setError('Failed to save event. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const formatDateForDisplay = (dateString: string): string => {
+    const handleDelete = async () => {
+        if (!formData.id) return;
+        setError(null);
+        setIsLoading(true);
+
         try {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) {
-                throw new Error('Invalid date');
-            }
-            return date.toLocaleString('tr-TR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+            const response = await fetch(`/api/events/${formData.id}/delete`, {
+                method: 'DELETE',
             });
+
+            if (!response.ok) throw new Error('Failed to delete event');
+
+            onEventUpdate({ id: formData.id, deleted: true });
+            onClose();
         } catch (error) {
-            console.error('Error formatting date:', error);
-            return dateString;
+            console.error('Error deleting event:', error);
+            setError('Failed to delete event. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const formatDateForAPI = (dateString: string): string => {
-        try {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) {
-                throw new Error('Invalid date');
-            }
-            return date.toISOString();
-        } catch (error) {
-            console.error('Error formatting date for API:', error);
-            return dateString;
-        }
-    };
-
-    if (!modalData) return null;
+    if (!isOpen) return null;
 
     return (
-        <ModalWrapper isOpen={isOpen} onClose={onClose}>
-            <h2 className="text-xl font-bold mb-4">Event Details</h2>
-            {error && <p className="text-red-500 mb-4">{error}</p>}
-            <form onSubmit={handleSubmit}>
-                <div className="mb-4">
-                    <label className="block text-sm font-medium mb-1" htmlFor="title">Title</label>
-                    <input
-                        type="text"
-                        id="title"
-                        name="title"
-                        value={formData.title}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border rounded-md"
-                        required
-                    />
-                </div>
-                <div className="mb-4">
-                    <label className="block text-sm font-medium mb-1" htmlFor="start">Start</label>
-                    <input
-                        type="text"
-                        id="start"
-                        name="start"
-                        value={formData.start}
-                        onChange={handleInputChange}
-                        onFocus={(e) => e.target.type = 'datetime-local'}
-                        onBlur={(e) => {
-                            e.target.type = 'text';
-                            setFormData(prev => ({ ...prev, start: formatDateForDisplay(e.target.value) }));
-                        }}
-                        className="w-full px-3 py-2 border rounded-md"
-                        required
-                    />
-                </div>
-                <div className="mb-4">
-                    <label className="block text-sm font-medium mb-1" htmlFor="end">End</label>
-                    <input
-                        type="text"
-                        id="end"
-                        name="end"
-                        value={formData.end}
-                        onChange={handleInputChange}
-                        onFocus={(e) => e.target.type = 'datetime-local'}
-                        onBlur={(e) => {
-                            e.target.type = 'text';
-                            setFormData(prev => ({ ...prev, end: formatDateForDisplay(e.target.value) }));
-                        }}
-                        className="w-full px-3 py-2 border rounded-md"
-                        required
-                    />
-                </div>
-                <div className="mb-4">
-                    <label className="block text-sm font-medium mb-1" htmlFor="patientName">Patient</label>
-                    {isLoading ? (
-                        <p>Loading patients...</p>
-                    ) : (
-                        <>
-                            <input
-                                type="text"
-                                id="patientName"
-                                name="patientName"
-                                value={formData.patientName}
-                                readOnly
-                                className="w-full px-3 py-2 border rounded-md mb-2"
-                            />
-                            <select
-                                id="patientId"
-                                name="patientId"
-                                value={formData.patientId}
-                                onChange={handleInputChange}
-                                className="w-full px-3 py-2 border rounded-md"
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div className="bg-white p-6 rounded-lg w-full max-w-md">
+                <h2 className="text-xl font-bold mb-4">{formData.id ? 'Edit Event' : 'Create New Event'}</h2>
+                {error && <p className="text-red-500 mb-4">{error}</p>}
+                <form onSubmit={handleSubmit}>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium mb-1" htmlFor="title">Title</label>
+                        <input
+                            type="text"
+                            id="title"
+                            name="title"
+                            value={formData.title}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border rounded-md"
+                            required
+                        />
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium mb-1" htmlFor="start">Start</label>
+                        <input
+                            type="datetime-local"
+                            id="start"
+                            name="start"
+                            value={formData.start}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border rounded-md"
+                            required
+                        />
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium mb-1" htmlFor="end">End</label>
+                        <input
+                            type="datetime-local"
+                            id="end"
+                            name="end"
+                            value={formData.end}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border rounded-md"
+                            required
+                        />
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium mb-1">Patient</label>
+                        <Popover open={open} onOpenChange={setOpen}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={open}
+                                    className="w-full justify-between"
+                                >
+                                    {selectedPatient
+                                        ? `${selectedPatient.firstName} ${selectedPatient.lastName}`
+                                        : "Select patient..."}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-full p-0">
+                                <Command>
+                                    <CommandInput placeholder="Search patient..." />
+                                    <CommandList>
+                                        <CommandEmpty>No patient found.</CommandEmpty>
+                                        <CommandGroup>
+                                            {patients.map((patient) => (
+                                                <CommandItem
+                                                    key={patient.id}
+                                                    value={`${patient.firstName} ${patient.lastName}`}
+                                                    onSelect={() => {
+                                                        setSelectedPatient(patient);
+                                                        setOpen(false);
+                                                    }}
+                                                >
+                                                    <Check
+                                                        className={cn(
+                                                            "mr-2 h-4 w-4",
+                                                            selectedPatient?.id === patient.id ? "opacity-100" : "opacity-0"
+                                                        )}
+                                                    />
+                                                    {`${patient.firstName} ${patient.lastName}`}
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium mb-1" htmlFor="color">Color</label>
+                        <input
+                            type="color"
+                            id="color"
+                            name="color"
+                            value={formData.color}
+                            onChange={handleInputChange}
+                            className="w-full h-10 px-3 py-2 border rounded-md"
+                        />
+                    </div>
+                    <div className="flex justify-between">
+                        <button
+                            type="submit"
+                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                            disabled={isLoading}
+                        >
+                            {formData.id ? 'Update' : 'Create'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                    {formData.id && (
+                        <div className="mt-4">
+                            <button
+                                type="button"
+                                onClick={handleDelete}
+                                className="w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                                disabled={isLoading}
                             >
-                                <option value="">Change patient</option>
-                                {patients.map((patient) => (
-                                    <option key={patient.id} value={patient.id}>
-                                        {`${patient.firstName} ${patient.lastName}`}
-                                    </option>
-                                ))}
-                            </select>
-                        </>
+                                Delete Event
+                            </button>
+                        </div>
                     )}
-                </div>
-                <div className="mb-4">
-                    <label className="block text-sm font-medium mb-1" htmlFor="color">Color</label>
-                    <select
-                        id="color"
-                        name="color"
-                        value={formData.color}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border rounded-md"
-                        required
-                    >
-                        {PRESET_COLORS.map((color) => (
-                            <option key={color.value} value={color.value}>
-                                {color.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <div className="mt-6 flex justify-between">
-                    <button
-                        type="submit"
-                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                        disabled={isLoading}
-                    >
-                        Update Event
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
-                    >
-                        Cancel
-                    </button>
-                </div>
-            </form>
-        </ModalWrapper>
+                </form>
+            </div>
+        </div>
     );
 };
 

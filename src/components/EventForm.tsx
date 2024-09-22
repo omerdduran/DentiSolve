@@ -1,127 +1,144 @@
+"use client"
+
 import React, { useState, useEffect } from 'react';
 import { Patient } from "@/shared/types";
-import { PRESET_COLORS } from "@/shared/utils";
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import { Check, ChevronsUpDown, CalendarIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import { format } from "date-fns"
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+
+const PRESET_COLORS = [
+    { name: 'Red', value: '#FF0000' },
+    { name: 'Blue', value: '#0000FF' },
+    { name: 'Green', value: '#00FF00' },
+    { name: 'Yellow', value: '#FFFF00' },
+    { name: 'Purple', value: '#800080' },
+];
 
 const EventForm: React.FC = () => {
-    const [title, setTitle] = useState('');
-    const [startDate, setStartDate] = useState<Date | null>(null);
-    const [startTime, setStartTime] = useState<string>('00:00');
-    const [endDate, setEndDate] = useState<Date | null>(null);
-    const [endTime, setEndTime] = useState<string>('00:00');
-    const [color, setColor] = useState(PRESET_COLORS[0].value);
-    const [selectedPatient, setSelectedPatient] = useState<number | null>(null);
+    const [formData, setFormData] = useState({
+        title: '',
+        start: '',
+        end: '',
+        color: PRESET_COLORS[0].value,
+        patientId: 0,
+    });
     const [patients, setPatients] = useState<Patient[]>([]);
-    const [query, setQuery] = useState('');
-    const [loading, setLoading] = useState<boolean>(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [open, setOpen] = useState(false);
+    const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
     useEffect(() => {
-        async function fetchPatients() {
-            try {
-                const response = await fetch('/api/patients');
-                if (!response.ok) {
-                    throw new Error('Hastalar getirilemedi');
-                }
-                const data = await response.json();
-                setPatients(data);
-            } catch (error) {
-                console.error('Hata:', error);
-                setError('Hastalar getirilemedi');
-            } finally {
-                setLoading(false);
-            }
-        }
-
         fetchPatients();
     }, []);
 
-    const formatTime = (time: string): string => {
-        const [hours, minutes] = time.split(':');
-        return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+    const fetchPatients = async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/patients');
+            if (!response.ok) throw new Error('Hastalar getirilemedi');
+            const data = await response.json();
+            setPatients(data);
+        } catch (error) {
+            console.error('Hata:', error);
+            setError('Hastalar yüklenemedi. Lütfen sayfayı yenileyip tekrar deneyin.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleSubmit = async (event: React.FormEvent) => {
-        event.preventDefault();
-        setIsSubmitting(true);
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
 
-        if (selectedPatient === null) {
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        setIsLoading(true);
+
+        if (!selectedPatient) {
             setError('Lütfen bir hasta seçin');
-            setIsSubmitting(false);
+            setIsLoading(false);
             return;
         }
 
         if (!startDate || !endDate) {
             setError('Lütfen başlangıç ve bitiş tarihlerini seçin');
-            setIsSubmitting(false);
+            setIsLoading(false);
             return;
         }
 
         const start = new Date(startDate);
         const end = new Date(endDate);
-        start.setHours(parseInt(startTime.split(':')[0]), parseInt(startTime.split(':')[1]));
-        end.setHours(parseInt(endTime.split(':')[0]), parseInt(endTime.split(':')[1]));
+        start.setHours(parseInt(formData.start.split(':')[0]), parseInt(formData.start.split(':')[1]));
+        end.setHours(parseInt(formData.end.split(':')[0]), parseInt(formData.end.split(':')[1]));
 
         if (end <= start) {
             setError('Bitiş tarihi başlangıç tarihinden sonra olmalıdır');
-            setIsSubmitting(false);
+            setIsLoading(false);
             return;
         }
 
         try {
             const response = await fetch('/api/events/create', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    title,
-                    start,
-                    end,
-                    color,
-                    patientId: selectedPatient
+                    ...formData,
+                    start: start.toISOString(),
+                    end: end.toISOString(),
+                    patientId: selectedPatient.id
                 }),
             });
 
-            if (!response.ok) {
-                throw new Error('Etkinlik oluşturulamadı');
-            }
+            if (!response.ok) throw new Error('Etkinlik oluşturulamadı');
 
-            const result = await response.json();
-            console.log('Etkinlik oluşturuldu:', result);
+            const savedEvent = await response.json();
+            console.log('Etkinlik oluşturuldu:', savedEvent);
             setSuccess('Etkinlik başarıyla takvime eklendi');
 
             // Formu sıfırla
-            setTitle('');
-            setStartDate(null);
-            setStartTime('00:00');
-            setEndDate(null);
-            setEndTime('00:00');
-            setColor(PRESET_COLORS[0].value);
+            setFormData({
+                title: '',
+                start: '',
+                end: '',
+                color: PRESET_COLORS[0].value,
+                patientId: 0,
+            });
+            setStartDate(undefined);
+            setEndDate(undefined);
             setSelectedPatient(null);
-            setQuery('');
 
             // 3 saniye sonra başarı mesajını temizle
             setTimeout(() => setSuccess(null), 3000);
-
         } catch (error) {
             console.error('Hata:', error);
             setError('Etkinlik oluşturulamadı. Lütfen tekrar deneyin.');
         } finally {
-            setIsSubmitting(false);
+            setIsLoading(false);
         }
     };
 
-    const filteredPatients = query === ''
-        ? []
-        : patients.filter(patient =>
-            `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(query.toLowerCase())
-        );
-
-    if (loading) return <p className="text-center py-4">Hastalar yükleniyor...</p>;
+    if (isLoading) return <p className="text-center py-4">Yükleniyor...</p>;
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6 p-6 bg-white rounded-lg shadow-md max-w-2xl mx-auto">
@@ -138,112 +155,152 @@ const EventForm: React.FC = () => {
 
             <div className="space-y-4">
                 <div>
-                    <label htmlFor="title" className="block text-sm font-medium text-gray-700">Tedavi</label>
+                    <label className="block text-sm font-medium mb-1" htmlFor="title">Tedavi</label>
                     <input
-                        id="title"
                         type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Tedavi girin"
+                        id="title"
+                        name="title"
+                        value={formData.title}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border rounded-md"
                         required
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">Başlangıç
-                            Tarihi</label>
-                        <DatePicker
-                            selected={startDate}
-                            onChange={(date) => setStartDate(date)}
-                            dateFormat="yyyy-MM-dd"
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            placeholderText="Tarih seçin"
-                            required
-                        />
+                        <label className="block text-sm font-medium mb-1">Başlangıç Tarihi</label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !startDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {startDate ? format(startDate, "PPP") : <span>Tarih seçin</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={startDate}
+                                    onSelect={setStartDate}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
                     </div>
                     <div>
-                        <label htmlFor="startTime" className="block text-sm font-medium text-gray-700">Başlangıç Saati
-                            (24 saat formatı)</label>
+                        <label className="block text-sm font-medium mb-1" htmlFor="start">Başlangıç Saati</label>
                         <input
-                            id="startTime"
                             type="time"
-                            value={startTime}
-                            onChange={(e) => setStartTime(formatTime(e.target.value))}
-                            required
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">Bitiş
-                            Tarihi</label>
-                        <DatePicker
-                            selected={endDate}
-                            onChange={(date) => setEndDate(date)}
-                            dateFormat="yyyy-MM-dd"
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            placeholderText="Tarih seçin"
+                            id="start"
+                            name="start"
+                            value={formData.start}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border rounded-md"
                             required
                         />
                     </div>
                     <div>
-                        <label htmlFor="endTime" className="block text-sm font-medium text-gray-700">Bitiş Saati (24
-                            saat formatı)</label>
+                        <label className="block text-sm font-medium mb-1">Bitiş Tarihi</label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !endDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {endDate ? format(endDate, "PPP") : <span>Tarih seçin</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={endDate}
+                                    onSelect={setEndDate}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-1" htmlFor="end">Bitiş Saati</label>
                         <input
-                            id="endTime"
                             type="time"
-                            value={endTime}
-                            onChange={(e) => setEndTime(formatTime(e.target.value))}
+                            id="end"
+                            name="end"
+                            value={formData.end}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border rounded-md"
                             required
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         />
                     </div>
                 </div>
 
-
                 <div>
-                    <label htmlFor="patient" className="block text-sm font-medium text-gray-700">Hasta</label>
-                    <div className="relative mt-1">
-                        <input
-                            id="patient"
-                            type="text"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Hasta ara"
-                            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        />
-                        {filteredPatients.length > 0 && (
-                            <ul className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-                                {filteredPatients.map(patient => (
-                                    <li
-                                        key={patient.id}
-                                        onClick={() => {
-                                            setSelectedPatient(patient.id);
-                                            setQuery(`${patient.firstName} ${patient.lastName}`);
-                                        }}
-                                        className={`cursor-default select-none relative py-2 pl-3 pr-9 ${
-                                            selectedPatient === patient.id ? 'text-white bg-blue-600' : 'text-gray-900'
-                                        }`}
-                                    >
-                                        {patient.firstName} {patient.lastName}
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
+                    <label className="block text-sm font-medium mb-1">Hasta</label>
+                    <Popover open={open} onOpenChange={setOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={open}
+                                className="w-full justify-between"
+                            >
+                                {selectedPatient
+                                    ? `${selectedPatient.firstName} ${selectedPatient.lastName}`
+                                    : "Hasta seçin..."}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0">
+                            <Command>
+                                <CommandInput placeholder="Hasta ara..." />
+                                <CommandList>
+                                    <CommandEmpty>Hasta bulunamadı.</CommandEmpty>
+                                    <CommandGroup>
+                                        {patients.map((patient) => (
+                                            <CommandItem
+                                                key={patient.id}
+                                                value={`${patient.firstName} ${patient.lastName}`}
+                                                onSelect={() => {
+                                                    setSelectedPatient(patient);
+                                                    setOpen(false);
+                                                }}
+                                            >
+                                                <Check
+                                                    className={cn(
+                                                        "mr-2 h-4 w-4",
+                                                        selectedPatient?.id === patient.id ? "opacity-100" : "opacity-0"
+                                                    )}
+                                                />
+                                                {`${patient.firstName} ${patient.lastName}`}
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Belirti Rengi</label>
+                    <label className="block text-sm font-medium mb-1">Belirti Rengi</label>
                     <div className="mt-2 flex flex-wrap gap-2">
                         {PRESET_COLORS.map((preset) => (
                             <button
                                 key={preset.value}
                                 type="button"
-                                onClick={() => setColor(preset.value)}
+                                onClick={() => setFormData(prev => ({ ...prev, color: preset.value }))}
                                 className={`w-8 h-8 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                                    color === preset.value ? 'ring-2 ring-offset-2 ring-blue-500' : ''
+                                    formData.color === preset.value ? 'ring-2 ring-offset-2 ring-blue-500' : ''
                                 }`}
                                 style={{ backgroundColor: preset.value }}
                                 title={preset.name}
@@ -255,10 +312,10 @@ const EventForm: React.FC = () => {
 
             <button
                 type="submit"
-                disabled={isSubmitting}
-                className={`w-full px-4 py-2 text-white ${isSubmitting ? 'bg-gray-400' : 'bg-blue-600'} rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+                disabled={isLoading}
+                className={`w-full px-4 py-2 text-white ${isLoading ? 'bg-gray-400' : 'bg-blue-600'} rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
             >
-                {isSubmitting ? 'Yükleniyor...' : 'Takvime Ekle'}
+                {isLoading ? 'Yükleniyor...' : 'Takvime Ekle'}
             </button>
         </form>
     );
