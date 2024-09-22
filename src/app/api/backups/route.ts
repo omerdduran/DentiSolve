@@ -4,12 +4,6 @@ import { scheduleBackup, stopScheduledBackup, getScheduleStatus } from './schedu
 import { promises as fs } from 'fs';
 import path from "path";
 
-export const config = {
-    api: {
-        bodyParser: false,
-    },
-};
-
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const action = searchParams.get('action');

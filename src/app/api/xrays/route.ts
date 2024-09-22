@@ -8,13 +8,10 @@ export async function POST(request: NextRequest) {
         const data = await request.json();
         console.log('Received data:', data);
 
-        // Verileri ayıkla
         const { patient, datePerformed, findings, impression, imageUrl } = data;
 
-        // `patient` nesnesinden `id` alın
         const patientId = patient?.id;
 
-        // Zorunlu alanları kontrol et (imageUrl artık boş string olabilir)
         if (!patientId || !datePerformed || !findings || !impression) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
@@ -28,7 +25,7 @@ export async function POST(request: NextRequest) {
                 datePerformed: new Date(datePerformed),
                 findings: findings,
                 impression: impression,
-                imageUrl: imageUrl || null,  // imageUrl boşsa null olarak ayarla
+                imageUrl: imageUrl || null,
             },
         });
 
