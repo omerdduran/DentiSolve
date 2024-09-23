@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ import {
 export interface PatientFormData {
     firstName: string;
     lastName: string;
-    dateOfBirth: Date | undefined;
+    dateOfBirth: Date | string | undefined;
     homePhone: string;
     currentTreatment: string;
     medicalHistory: string;
@@ -47,7 +47,7 @@ const PatientForm: React.FC<PatientFormProps> = ({
     const [formData, setFormData] = useState<PatientFormData>({
         firstName: initialData?.firstName || '',
         lastName: initialData?.lastName || '',
-        dateOfBirth: initialData?.dateOfBirth,
+        dateOfBirth: initialData?.dateOfBirth ? new Date(initialData.dateOfBirth) : undefined,
         homePhone: initialData?.homePhone || '',
         currentTreatment: initialData?.currentTreatment || '',
         medicalHistory: initialData?.medicalHistory || '',
@@ -75,7 +75,7 @@ const PatientForm: React.FC<PatientFormProps> = ({
 
     // Custom calendar component with year selection
     const CustomCalendar = ({ selected, ...props }: any) => {
-        const [year, setYear] = useState(selected?.getFullYear() || new Date().getFullYear());
+        const [year, setYear] = useState(selected instanceof Date ? selected.getFullYear() : new Date().getFullYear());
 
         const years = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
 
@@ -115,14 +115,13 @@ const PatientForm: React.FC<PatientFormProps> = ({
                 <Calendar
                     {...props}
                     mode="single"
-                    selected={selected}
-                    month={new Date(year, selected?.getMonth() || 0)}
+                    selected={selected instanceof Date ? selected : undefined}
+                    month={new Date(year, selected instanceof Date ? selected.getMonth() : 0)}
                     onMonthChange={(newMonth) => setYear(newMonth.getFullYear())}
                 />
             </div>
         );
     };
-
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -156,7 +155,7 @@ const PatientForm: React.FC<PatientFormProps> = ({
                                     !formData.dateOfBirth && "text-muted-foreground"
                                 )}
                             >
-                                {formData.dateOfBirth ? (
+                                {formData.dateOfBirth instanceof Date ? (
                                     format(formData.dateOfBirth, "PPP")
                                 ) : (
                                     <span>Bir tarih seçin</span>
@@ -166,9 +165,8 @@ const PatientForm: React.FC<PatientFormProps> = ({
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
                             <CustomCalendar
-                                selected={formData.dateOfBirth}
+                                selected={formData.dateOfBirth instanceof Date ? formData.dateOfBirth : undefined}
                                 onSelect={handleDateChange}
-                                // @ts-ignore
                                 disabled={(date) =>
                                     date > new Date() || date < new Date("1900-01-01")
                                 }

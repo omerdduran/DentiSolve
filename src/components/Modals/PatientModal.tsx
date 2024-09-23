@@ -55,7 +55,10 @@ const PatientModal: React.FC<PatientModalProps> = ({
             <div className="space-y-4">
                 {isEditing ? (
                     <PatientForm
-                        initialData={patient}
+                        initialData={{
+                            ...patient,
+                            dateOfBirth: patient.dateOfBirth ? new Date(patient.dateOfBirth) : undefined
+                        }}
                         onSubmit={handleSave}
                         submitButtonText="Kaydet"
                     />
