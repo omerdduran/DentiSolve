@@ -1,15 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useAuth } from '../../../context/AuthContext';
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button"
-import {Patient, Xray} from "@/shared/types";
+import { Patient, Xray } from "@/shared/types";
 import XrayModal from "@/components/Modals/XrayModal";
 
 export default function XrayManagement() {
-    const { isAuthenticated } = useAuth();
-    const router = useRouter();
     const [xrays, setXrays] = useState<Xray[]>([]);
     const [patients, setPatients] = useState<Patient[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -17,14 +13,6 @@ export default function XrayManagement() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-
-    useEffect(() => {
-        if (isAuthenticated) {
-            fetchPatients();
-        } else {
-            router.push('/login');
-        }
-    }, [isAuthenticated, router]);
 
     const fetchXrays = useCallback(async () => {
         setIsLoading(true);
@@ -80,7 +68,9 @@ export default function XrayManagement() {
             const method = id ? 'PUT' : 'POST';
             const response = await fetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify(data),
             });
             if (!response.ok) throw new Error(`Failed to ${id ? 'update' : 'add'} X-ray`);
@@ -94,7 +84,9 @@ export default function XrayManagement() {
 
     const handleDelete = useCallback(async (id: number) => {
         try {
-            const response = await fetch(`/api/xrays/${id}`, { method: 'DELETE' });
+            const response = await fetch(`/api/xrays/${id}`, {
+                method: 'DELETE',
+            });
             if (!response.ok) throw new Error('Failed to delete X-ray');
             await fetchXrays();
             handleCloseModal();
@@ -116,7 +108,7 @@ export default function XrayManagement() {
         return filteredXrays.map(xray => (
             <div
                 key={xray.id}
-                className="border p-4 rounded shadow"
+                className="border p-4 rounded shadow cursor-pointer hover:bg-gray-50"
                 onClick={() => handleEditXray(xray)}
             >
                 <h3 className="font-bold">{xray.patient.firstName} {xray.patient.lastName}</h3>
@@ -125,13 +117,8 @@ export default function XrayManagement() {
         ));
     }, [filteredXrays, handleEditXray]);
 
-
     if (isLoading) {
         return <div className="text-center mt-8">X-ray yükleniyor...</div>;
-    }
-
-    if (!isAuthenticated) {
-        return null;
     }
 
     return (
@@ -140,7 +127,7 @@ export default function XrayManagement() {
                 <h1 className="text-2xl font-bold mb-4 md:mb-0 md:mr-6">X-ray Yönetimi</h1>
                 <Button onClick={handleAddXray}>Yeni X-ray Ekle</Button>
             </div>
-            <div className="flex-grow md:mr-4">
+            <div className="flex-grow md:mr-4 mb-4">
                 <input
                     type="text"
                     placeholder="Hasta adına göre arama yapın"
@@ -149,8 +136,8 @@ export default function XrayManagement() {
                     className="w-full px-3 py-2 border rounded-lg"
                 />
             </div>
-            {error  && <p className="text-red-500 mb-4">{error}</p>}
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 pt-4">
+            {error && <p className="text-red-500 mb-4">{error}</p>}
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {xrayList}
             </div>
             <XrayModal

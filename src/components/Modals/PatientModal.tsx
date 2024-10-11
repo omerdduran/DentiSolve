@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ModalWrapper from './ModalWrapper';
-import {Patient, Appointment, Xray, PatientFormData} from '@/shared/types';
+import { Patient, Appointment, Xray, PatientFormData } from '@/shared/types';
 import { formatDate } from '@/shared/utils';
 import PatientForm from "@/components/Forms/PatientForm";
 import {
@@ -16,8 +16,7 @@ interface PatientModalProps {
     patient: Patient | null;
     appointments?: Appointment[];
     xrays?: Xray[];
-    onUpdate: (updatedPatient: Patient) => void;
-    onAddAppointment: (appointment: { title: string; date: string }) => void;
+    onUpdate: (updatedPatient: Patient) => Promise<void>;
     onXrayClick: (xray: Xray) => void;
     isLoadingAppointments: boolean;
     isLoadingXrays: boolean;
@@ -42,13 +41,14 @@ const PatientModal: React.FC<PatientModalProps> = ({
 
     if (!isOpen || !patient) return null;
 
-    const handleSave = (formData: PatientFormData) => {
+    const handleSave = async (formData: PatientFormData) => {
         if (patient) {
-            onUpdate({ ...formData, id: patient.id });
+            await onUpdate({ ...patient, ...formData });
         }
         setIsEditing(false);
     };
 
+    // @ts-ignore
     return (
         <ModalWrapper isOpen={isOpen} onClose={onClose}>
             <h2 className="text-xl font-bold mb-4">{isEditing ? "Hasta Bilgilerini Düzenle" : "Hasta Detayları"}</h2>
@@ -56,9 +56,16 @@ const PatientModal: React.FC<PatientModalProps> = ({
                 {isEditing ? (
                     <PatientForm
                         initialData={{
-                            ...patient,
-                            dateOfBirth: patient.dateOfBirth ? new Date(patient.dateOfBirth) : undefined
+                            firstName: patient.firstName,
+                            lastName: patient.lastName,
+                            dateOfBirth: patient.dateOfBirth ? new Date(patient.dateOfBirth) : undefined,
+                            homePhone: patient.homePhone || '',
+                            currentTreatment: patient.currentTreatment || '',
+                            medicalHistory: patient.medicalHistory || '',
+                            anyMedicalProblems: patient.anyMedicalProblems || '',
+                            womenSpecificInfo: patient.womenSpecificInfo || ''
                         }}
+                        // @ts-ignore
                         onSubmit={handleSave}
                         submitButtonText="Kaydet"
                     />
@@ -69,7 +76,6 @@ const PatientModal: React.FC<PatientModalProps> = ({
                         <p><strong>Telefon:</strong> {patient.homePhone || 'N/A'}</p>
                         <p><strong>Tedavi/İlaçlar:</strong> {patient.currentTreatment || 'N/A'}</p>
                         <p><strong>Tıbbi Geçmiş:</strong> {patient.medicalHistory || 'N/A'}</p>
-                        <p><strong>Ameliyat Geçmişi:</strong> {patient.surgeryHistory || 'N/A'}</p>
                         <p><strong>Diğer Sorunlar:</strong> {patient.anyMedicalProblems || 'N/A'}</p>
                         <p><strong>Kadın Sağlığı:</strong> {patient.womenSpecificInfo || 'N/A'}</p>
                     </div>
@@ -141,7 +147,7 @@ const PatientModal: React.FC<PatientModalProps> = ({
                             className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
                         >
                             Düzenle
-                        </button>
+                        </button>s
                         <button
                             onClick={onDelete}
                             className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
@@ -152,7 +158,7 @@ const PatientModal: React.FC<PatientModalProps> = ({
                 )}
                 <button
                     onClick={onClose}
-                    className="px-3 py-1 text-scm bg-gray-500 text-white rounded hover:bg-gray-600"
+                    className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
                 >
                     Kapat
                 </button>

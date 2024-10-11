@@ -1,37 +1,43 @@
-"use client";
+// context/AuthContext.tsx
 
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface AuthContextType {
     isAuthenticated: boolean;
-    login: () => void;
+    token: string | null;
+    login: (token: string) => void;
     logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const router = useRouter();
+    const [token, setToken] = useState<string | null>(null);
 
     useEffect(() => {
-        const token = document.cookie.replace(/(?:(?:^|.*;\s*)token\s*=\s*([^;]*).*$)|^.*$/, "$1");
-        setIsAuthenticated(!!token);
+        // Check for token in localStorage on initial load
+        const storedToken = localStorage.getItem('authToken');
+        if (storedToken) {
+            setToken(storedToken);
+            setIsAuthenticated(true);
+        }
     }, []);
 
-    const login = () => {
+    const login = (newToken: string) => {
+        localStorage.setItem('authToken', newToken);
+        setToken(newToken);
         setIsAuthenticated(true);
     };
 
     const logout = () => {
-        document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        localStorage.removeItem('authToken');
+        setToken(null);
         setIsAuthenticated(false);
-        router.push('/');
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+        <AuthContext.Provider value={{ isAuthenticated, token, login, logout }}>
             {children}
         </AuthContext.Provider>
     );

@@ -26,7 +26,7 @@ export default function BackupManagementPage() {
     const fetchBackups = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:3002/api/backups');
+            const response = await fetch('/api/backups');
             if (!response.ok) throw new Error('Failed to fetch backups');
             const data = await response.json();
             setBackups(data);
@@ -40,7 +40,7 @@ export default function BackupManagementPage() {
 
     const fetchScheduleStatus = async () => {
         try {
-            const response = await fetch('http://localhost:3002/api/backups?action=schedule-status');
+            const response = await fetch('/api/backups?action=schedule-status');
             if (!response.ok) throw new Error('Failed to fetch schedule status');
             const data = await response.json();
             setScheduleStatus(data);
@@ -54,12 +54,12 @@ export default function BackupManagementPage() {
         setError(null);
         setSuccess(null);
         try {
-            const response = await fetch('http://localhost:3002/api/backups', {
+            const response = await fetch('/api/backups', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({}),  // Send an empty object if no schedule is needed
+                body: JSON.stringify({}),
             });
             if (!response.ok) {
                 const errorData = await response.json();
@@ -80,7 +80,7 @@ export default function BackupManagementPage() {
         setError(null);
         setSuccess(null);
         try {
-            const response = await fetch('http://localhost:3002/api/backups', {
+            const response = await fetch('/api/backups', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ schedule: cronExpression }),
@@ -98,7 +98,7 @@ export default function BackupManagementPage() {
         setError(null);
         setSuccess(null);
         try {
-            const response = await fetch('http://localhost:3002/api/backups?id=schedule', { method: 'DELETE' });
+            const response = await fetch('/api/backups?id=schedule', { method: 'DELETE' });
             if (!response.ok) throw new Error('Failed to stop scheduled backup');
             setSuccess('Scheduled backup stopped');
             await fetchScheduleStatus();
@@ -112,7 +112,7 @@ export default function BackupManagementPage() {
         setError(null);
         setSuccess(null);
         try {
-            const response = await fetch(`http://localhost:3002/api/backups?id=${id}`, { method: 'DELETE' });
+            const response = await fetch(`/api/backups?id=${id}`, { method: 'DELETE' });
             if (!response.ok) throw new Error('Failed to delete backup');
             setSuccess('Backup deleted successfully');
             await fetchBackups();
@@ -123,7 +123,7 @@ export default function BackupManagementPage() {
     };
 
     const downloadBackup = (fileName: string) => {
-        window.location.href = `http://localhost:3002/api/backups?action=download&fileName=${fileName}`;
+        window.location.href = `../../../../backups`;
     };
 
     const restoreBackup = async (file: File) => {
@@ -133,7 +133,7 @@ export default function BackupManagementPage() {
         formData.append('backup', file);
 
         try {
-            const response = await fetch('http://localhost:3002/api/backups', {
+            const response = await fetch('/api/backups', {
                 method: 'PUT',
                 body: formData,
             });

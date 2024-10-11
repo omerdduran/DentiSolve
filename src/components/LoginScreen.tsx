@@ -1,27 +1,54 @@
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation'; // Doğru kullanım
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 
-const LoginScreen: React.FC = () => {
+interface LoginScreenProps {
+    onSuccessfulLogin: (token: string) => void;
+}
+
+const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccessfulLogin }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
 
     const { login } = useAuth();
     const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password }),
-        });
+        console.log('Login attempt started'); // Yeni log
+        setIsLoading(true);
+        setError('');
 
-        if (response.ok) {
-            login();
-            router.push('/dashboard');
-        } else {
-            alert('Login failed');
+        try {
+            console.log('Sending request to /api/login'); // Yeni log
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password }),
+            });
+
+            console.log('Response received', response.status); // Yeni log
+
+            if (response.ok) {
+                const data = await response.json();
+                login(data.token);  // token'ı login fonksiyonuna geçiriyoruz
+                if (onSuccessfulLogin) {
+                    onSuccessfulLogin(data.token);
+                }
+                router.push('/dashboard');
+            } else {
+                const errorData = await response.json();
+                console.log('Login failed', errorData); // Yeni log
+                setError(errorData.message || 'Giriş başarısız oldu. Lütfen tekrar deneyin.');
+            }
+        } catch (error) {
+            console.error('Error during login:', error); // Değiştirilmiş log
+            setError('Bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
+        } finally {
+            setIsLoading(false);
+            console.log('Login attempt finished'); // Yeni log
         }
     };
 
@@ -44,11 +71,17 @@ const LoginScreen: React.FC = () => {
                     required
                     className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                {error && (
+                    <p className="text-red-500 text-sm">{error}</p>
+                )}
                 <button
                     type="submit"
-                    className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition-colors"
+                    disabled={isLoading}
+                    className={`w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition-colors ${
+                        isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                 >
-                    Giriş Yap
+                    {isLoading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
                 </button>
             </form>
         </div>

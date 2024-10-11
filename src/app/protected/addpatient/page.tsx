@@ -2,21 +2,14 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../context/AuthContext';
 import PatientForm, { PatientFormData } from '@/components/Forms/PatientForm';
 import { useToast } from "@/components/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 
 const AddPatient: React.FC = () => {
-    const { isAuthenticated } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
-
-    if (!isAuthenticated) {
-        router.push('/login');
-        return null;
-    }
 
     const handleSubmit = async (formData: PatientFormData) => {
         setIsLoading(true);

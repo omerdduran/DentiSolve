@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../context/AuthContext';
 import { Patient, Xray, Appointment } from '@/shared/types';
 import { formatDate } from '@/shared/utils';
 import PatientModal from "@/components/Modals/PatientModal";
@@ -10,7 +9,6 @@ import FullScreenXrayModal from "@/components/Modals/FullScreenXrayModal";
 import {Button} from "@/components/ui/button";
 
 const PatientList: React.FC = () => {
-    const { isAuthenticated } = useAuth();
     const router = useRouter();
 
     const [patients, setPatients] = useState<Patient[]>([]);
@@ -25,15 +23,9 @@ const PatientList: React.FC = () => {
     const [selectedXray, setSelectedXray] = useState<Xray | null>(null);
     const [isXrayModalOpen, setIsXrayModalOpen] = useState(false);
 
-
-
     useEffect(() => {
-        if (isAuthenticated) {
-            void fetchPatients();
-        } else {
-            void router.push('/login');
-        }
-    }, [isAuthenticated, router]);
+        void fetchPatients();
+    }, []);
 
     useEffect(() => {
         if (searchTerm) {
@@ -93,9 +85,7 @@ const PatientList: React.FC = () => {
                 throw new Error('Failed to fetch patient appointments');
             }
             const data = await response.json();
-            console.log('Raw appointment data:', data); // Debugging: Ham veriyi logla
             const filteredAppointments = data.filter((appointment: Appointment) => appointment.patientId === patientId);
-            console.log('Filtered appointments:', filteredAppointments); // Debugging: Filtrelenmiş randevuları logla
             setAppointments(filteredAppointments);
         } catch (error) {
             console.error('Error fetching patient appointments:', error);
@@ -192,10 +182,6 @@ const PatientList: React.FC = () => {
         setSelectedXray(xray);
         setIsXrayModalOpen(true);
     };
-
-    if (!isAuthenticated) {
-        return null;
-    }
 
     return (
         <div className="p-6 min-h-screen">

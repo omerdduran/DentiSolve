@@ -1,30 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 import DefaultCalendar from "@/components/CalendarViews/DefaultCalendar";
 import EventForm from "@/components/EventForm";
-import { useAuth } from '../../../context/AuthContext';
 import { Plus, X } from 'lucide-react';
 
 export default function CalendarPage() {
-    const { isAuthenticated } = useAuth();
-    const router = useRouter();
     const [showEventForm, setShowEventForm] = useState(false);
-
-    useEffect(() => {
-        if (!isAuthenticated) {
-            router.push('/login');
-        }
-    }, [isAuthenticated, router]);
-
-    if (!isAuthenticated) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <p className="text-lg">Loading...</p>
-            </div>
-        );
-    }
 
     const toggleEventForm = () => {
         setShowEventForm(!showEventForm);
