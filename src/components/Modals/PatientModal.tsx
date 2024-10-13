@@ -1,27 +1,29 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import ModalWrapper from './ModalWrapper';
-import { Patient, Appointment, Xray, PatientFormData } from '@/shared/types';
-import { formatDate } from '@/shared/utils';
+import {Patient, Appointment, Xray, PatientFormData} from '@/shared/types';
+import {formatDate} from '@/shared/utils';
 import PatientForm from "@/components/Forms/PatientForm";
 import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import {ChevronDown, ChevronUp} from 'lucide-react';
 
 interface PatientModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    patient: Patient | null;
-    appointments?: Appointment[];
-    xrays?: Xray[];
-    onUpdate: (updatedPatient: Patient) => Promise<void>;
-    onXrayClick: (xray: Xray) => void;
-    isLoadingAppointments: boolean;
-    isLoadingXrays: boolean;
-    onDelete: () => void;
+    isOpen: boolean,
+    onClose: () => void,
+    patient: Patient | null,
+    appointments?: Appointment[],
+    xrays?: Xray[],
+    onUpdate: (updatedPatient: Patient) => Promise<void>,
+    onXrayClick: (xray: Xray) => void,
+    isLoadingAppointments: boolean,
+    isLoadingXrays: boolean,
+    onDelete: () => void,
+    onAddAppointment?: (appointment: { title: string; date: string }) => Promise<void>
 }
+
 
 const PatientModal: React.FC<PatientModalProps> = ({
                                                        isOpen,
@@ -33,7 +35,8 @@ const PatientModal: React.FC<PatientModalProps> = ({
                                                        onXrayClick,
                                                        isLoadingAppointments,
                                                        isLoadingXrays,
-                                                       onDelete
+                                                       onDelete,
+                                                       onAddAppointment
                                                    }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isAppointmentsOpen, setIsAppointmentsOpen] = useState(false);
@@ -43,7 +46,7 @@ const PatientModal: React.FC<PatientModalProps> = ({
 
     const handleSave = async (formData: PatientFormData) => {
         if (patient) {
-            await onUpdate({ ...patient, ...formData });
+            await onUpdate({...patient, ...formData});
         }
         setIsEditing(false);
     };
@@ -82,10 +85,11 @@ const PatientModal: React.FC<PatientModalProps> = ({
                 )}
 
                 {/* Randevular bölümü */}
-                <Collapsible open={isAppointmentsOpen} onOpenChange={setIsAppointmentsOpen} className="w-full border rounded-md">
+                <Collapsible open={isAppointmentsOpen} onOpenChange={setIsAppointmentsOpen}
+                             className="w-full border rounded-md">
                     <CollapsibleTrigger className="flex items-center justify-between w-full p-2 text-sm font-medium">
                         Randevular
-                        {isAppointmentsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        {isAppointmentsOpen ? <ChevronUp className="h-4 w-4"/> : <ChevronDown className="h-4 w-4"/>}
                     </CollapsibleTrigger>
                     <CollapsibleContent className="p-2">
                         {isLoadingAppointments ? (
@@ -108,7 +112,7 @@ const PatientModal: React.FC<PatientModalProps> = ({
                 <Collapsible open={isXraysOpen} onOpenChange={setIsXraysOpen} className="w-full border rounded-md">
                     <CollapsibleTrigger className="flex items-center justify-between w-full p-2 text-sm font-medium">
                         Röntgenler
-                        {isXraysOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        {isXraysOpen ? <ChevronUp className="h-4 w-4"/> : <ChevronDown className="h-4 w-4"/>}
                     </CollapsibleTrigger>
                     <CollapsibleContent className="p-2">
                         {isLoadingXrays ? (
@@ -121,7 +125,8 @@ const PatientModal: React.FC<PatientModalProps> = ({
                                         className="border p-2 rounded cursor-pointer hover:shadow-md transition-shadow"
                                         onClick={() => onXrayClick(xray)}
                                     >
-                                        <img src={xray.imageUrl} alt={xray.findings} className="w-full h-24 object-cover mb-1"/>
+                                        <img src={xray.imageUrl} alt={xray.findings}
+                                             className="w-full h-24 object-cover mb-1"/>
                                         <p className="text-xs">{formatDate(xray.datePerformed)}: {xray.impression}</p>
                                     </div>
                                 ))}
@@ -147,7 +152,7 @@ const PatientModal: React.FC<PatientModalProps> = ({
                             className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
                         >
                             Düzenle
-                        </button>s
+                        </button>
                         <button
                             onClick={onDelete}
                             className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"

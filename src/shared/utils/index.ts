@@ -49,8 +49,8 @@ export const treatmentOptions = [
 export const PRESET_COLORS = [
     { name: 'Kırmızı', value: '#FF0000' },
     { name: 'Mavi', value: '#0000FF' },
-    { name: 'Yeşil', value: '#00FF00' },
-    { name: 'Sarı', value: '#FFFF00' },
+    { name: 'Yeşil', value: '#015C55' },
+    { name: 'Sarı', value: '#F6AE2D' },
     { name: 'Mor', value: '#800080' },
 ];
 

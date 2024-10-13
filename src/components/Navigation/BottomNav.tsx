@@ -1,68 +1,200 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { menuItems } from "@/shared/utils";
+import React, { useState } from 'react';
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { getMenuList } from "@/lib/menu-list";
+import { Button } from "@/components/ui/button";
+import { LogOut, MoreHorizontal, ChevronRight, Dot } from "lucide-react";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { useAuth } from "../../../context/AuthContext";
 
-const BottomNav = () => {
+const MobileBottomNav = () => {
+    const pathname = usePathname();
     const router = useRouter();
-    const [activeItem, setActiveItem] = useState('');
-    const [isScrolled, setIsScrolled] = useState(false);
+    const menuList = getMenuList(pathname);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [openPopover, setOpenPopover] = useState<string | null>(null);
+    const { logout } = useAuth();
 
-    useEffect(() => {
-        const handleScroll = () => {
-            const scrollPosition = window.scrollY;
-            setIsScrolled(scrollPosition > 20);
-        };
+    const handleLogout = async () => {
+        try {
+            setIsLoggingOut(true);
+            const response = await fetch('/api/auth/logout', {
+                method: 'POST',
+                credentials: 'include',
+            });
 
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+            if (response.ok) {
+                localStorage.removeItem('token');
+                logout();
+                router.push('/login');
+            } else {
+                console.error('Logout failed:', response.status);
+            }
+        } catch (error) {
+            console.error('Error during logout:', error);
+        } finally {
+            setIsLoggingOut(false);
+        }
+    };
+
+    // Flatten the menu structure, keeping items with submenus
+    const flatMenu = menuList.reduce((acc, group) => {
+        return acc.concat(group.menus);
     }, []);
 
-    const handleClick = (path: string, name: string) => {
-        router.push(path);
-        setActiveItem(name);
+    const visibleItems = flatMenu.slice(0, 4);
+    const moreItems = flatMenu.slice(4);
+
+    const isActive = (item) => {
+        if (item.submenus && item.submenus.length > 0) {
+            return item.submenus.some(submenu => pathname.startsWith(submenu.href));
+        }
+        return pathname === item.href || pathname.startsWith(item.href + '/');
+    };
+
+    const renderMenuItem = (item, isInMoreMenu = false) => {
+        if (!item) {
+            console.error('Invalid menu item:', item);
+            return null;
+        }
+
+        const Icon = item.icon || Dot;
+        const active = isActive(item);
+
+        if (item.submenus && item.submenus.length > 0) {
+            return (
+                <Popover key={item.href} open={openPopover === item.href} onOpenChange={(isOpen) => setOpenPopover(isOpen ? item.href : null)}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className={cn(
+                                isInMoreMenu ? "w-full justify-between h-10 px-4" : "flex-col h-full rounded-none px-1",
+                                active ? "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary" : "text-muted-foreground"
+                            )}
+                        >
+                            {isInMoreMenu ? (
+                                <>
+                                    <span className="flex items-center">
+                                        <Icon size={18} className="mr-2" />
+                                        {item.label}
+                                    </span>
+                                    <ChevronRight size={16} />
+                                </>
+                            ) : (
+                                <>
+                                    <Icon size={20} />
+                                    <span className="text-xs mt-1">{item.label}</span>
+                                </>
+                            )}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                        className="w-screen max-w-[200px] p-0"
+                        side={isInMoreMenu ? "right" : "top"}
+                        align={isInMoreMenu ? "start" : "center"}
+                    >
+                        {item.submenus.map((submenu) => {
+                            if (!submenu) {
+                                console.error('Invalid submenu item:', submenu);
+                                return null;
+                            }
+                            const SubIcon = submenu.icon || Dot;
+                            const submenuActive = pathname === submenu.href || pathname.startsWith(submenu.href + '/');
+                            return (
+                                <Button
+                                    key={submenu.href}
+                                    variant="ghost"
+                                    size="sm"
+                                    className={cn(
+                                        "w-full justify-start h-10 px-4",
+                                        submenuActive ? "text-primary bg-secondary/50" : "text-muted-foreground "
+                                    )}
+                                    asChild
+                                    onClick={() => setOpenPopover(null)}
+                                >
+                                    <Link href={submenu.href}>
+                                        <SubIcon size={18} className="mr-2" />
+                                        <span>{submenu.label}</span>
+                                    </Link>
+                                </Button>
+                            );
+                        })}
+                    </PopoverContent>
+                </Popover>
+            );
+        }
+
+        return (
+            <Button
+                key={item.href}
+                variant="ghost"
+                size="sm"
+                className={cn(
+                    isInMoreMenu ? "w-full justify-start h-10 px-4" : "flex-col h-full rounded-none px-1",
+                    active ? "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary" : "text-muted-foreground hover:text-primary",
+                )}
+                asChild
+            >
+                <Link href={item.href}>
+                    {isInMoreMenu ? (
+                        <>
+                            <Icon size={18} className="mr-2" />
+                            <span>{item.label}</span>
+                        </>
+                    ) : (
+                        <>
+                            <Icon size={20} />
+                            <span className="text-xs mt-1">{item.label}</span>
+                        </>
+                    )}
+                </Link>
+            </Button>
+        );
     };
 
     return (
         <>
-            <div className="h-16 lg:hidden" /> {/* Spacer to prevent content from being hidden behind the nav */}
-            <footer className={`fixed bottom-0 left-0 right-0 transition-all duration-300 lg:hidden z-50
-                ${isScrolled
-                ? 'bg-white dark:bg-gray-900 shadow-md'
-                : 'bg-gray-50 dark:bg-gray-800'}`}>
-                <div className="max-w-screen-xl mx-auto px-4">
-                    <nav className="flex justify-around items-center py-2">
-                        {menuItems.map((item) => (
-                            <button
-                                key={item.name}
-                                onClick={() => handleClick(item.path, item.name)}
-                                className={`p-2 rounded-full transition-all duration-200 ${
-                                    activeItem === item.name
-                                        ? 'bg-blue-100 dark:bg-blue-900'
-                                        : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-                                }`}
-                                aria-label={item.name}
+            <div className="h-16 lg:hidden" />
+            <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border lg:hidden z-50">
+                <div className="flex justify-between items-center h-16 px-2 max-w-screen-xl mx-auto">
+                    {visibleItems.map((item) => renderMenuItem(item))}
+
+                    <Popover open={openPopover === 'more'} onOpenChange={(isOpen) => setOpenPopover(isOpen ? 'more' : null)}>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost" size="sm" className="flex-col h-full rounded-none px-1 text-muted-foreground">
+                                <MoreHorizontal size={20} />
+                                <span className="text-xs mt-1 text-muted-foreground hover:text-primary">Daha Fazla</span>
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-screen max-w-[200px] p-0" side="top" align="end">
+                            {moreItems.map((item) => renderMenuItem(item, true))}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start h-10 px-4 text-muted-foreground hover:text-primary"
+                                onClick={() => {
+                                    setOpenPopover(null);
+                                    handleLogout();
+                                }}
+                                disabled={isLoggingOut}
                             >
-                                <Image
-                                    src={item.icon}
-                                    alt={item.name}
-                                    width={24}
-                                    height={24}
-                                    className={`transition duration-75 ${
-                                        activeItem === item.name
-                                            ? 'text-blue-600 dark:text-blue-400'
-                                            : 'text-gray-600 dark:text-gray-400'
-                                    }`}
-                                />
-                            </button>
-                        ))}
-                    </nav>
+                                <LogOut size={18} className="mr-2" />
+                                <span>{isLoggingOut ? 'Çıkış Yapılıyor...' : 'Çıkış Yap'}</span>
+                            </Button>
+                        </PopoverContent>
+                    </Popover>
                 </div>
-            </footer>
+            </nav>
         </>
     );
 };
 
-export default BottomNav;
+export default MobileBottomNav;

@@ -34,7 +34,7 @@ function MainContent({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         setShowSidebar(isAuthenticated && pathname !== '/login' && !isSmallScreen);
-        setShowBottomNav((isSmallScreen && isAuthenticated && pathname !== '/login') || !isAuthenticated || pathname === '/login');
+        setShowBottomNav(isSmallScreen && isAuthenticated && pathname !== '/login');
     }, [isAuthenticated, pathname, isSmallScreen]);
 
     const sidebar = useStore(useSidebar, (x) => x);
@@ -54,9 +54,6 @@ function MainContent({ children }: { children: React.ReactNode }) {
             >
                 {children}
             </main>
-            <footer className={cn("transition-[margin-left] ease-in-out duration-300", sidebarClass)}>
-                <Footer />
-            </footer>
             {showBottomNav && <BottomNav />}
         </>
     );

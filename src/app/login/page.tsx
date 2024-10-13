@@ -13,7 +13,7 @@ export default function LoginPage() {
     useEffect(() => {
         if (isAuthenticated) {
             // Eğer kullanıcı zaten giriş yapmışsa, dashboard'a yönlendirin
-            router.push('/dashboard');
+            router.push('protected/dashboard');
         }
     }, [isAuthenticated, router]);
 
@@ -21,7 +21,7 @@ export default function LoginPage() {
         // Başarılı girişten sonra token'ı sakla
         localStorage.setItem('authToken', token);
         login(token);  // login fonksiyonunu kullanarak kullanıcıyı giriş yapmış duruma getir
-        router.push('/dashboard');  // Giriş sonrası yönlendirme
+        router.push('protected/dashboard');  // Giriş sonrası yönlendirme
     };
 
     return (

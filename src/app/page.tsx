@@ -30,7 +30,7 @@ export default function Home() {
                 if (response.ok) {
                     console.log('Token is valid, logging in');
                     await login(storedToken);
-                    router.push('/dashboard');
+                    router.push('/protected/dashboard');
                     return; // Early return to prevent setting isLoading to false
                 } else {
                     console.log('Token is invalid, clearing local storage');
@@ -55,7 +55,7 @@ export default function Home() {
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('authToken', token);
         login(token);
-        router.push('/dashboard');
+        router.push('protected/dashboard');
     }, [login, router]);
 
     if (isLoading) {

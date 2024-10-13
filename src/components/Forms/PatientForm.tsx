@@ -78,26 +78,38 @@ const PatientForm: React.FC<PatientFormProps> = ({
         onSelect: (date: Date | undefined) => void;
         disabled: (date: Date) => boolean;
     }> = ({ selected, onSelect, disabled }) => {
-        const [year, setYear] = useState(selected instanceof Date ? selected.getFullYear() : new Date().getFullYear());
+        const [date, setDate] = useState(selected || new Date());
+
+        const onMonthChange = (action: 'next' | 'previous') => {
+            setDate(prevDate => {
+                const newDate = new Date(prevDate);
+                if (action === 'next') {
+                    newDate.setMonth(newDate.getMonth() + 1);
+                } else {
+                    newDate.setMonth(newDate.getMonth() - 1);
+                }
+                return newDate;
+            });
+        };
 
         const years = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
 
         return (
             <div className="p-3">
-                <div className="flex justify-center items-center gap-1 mb-3">
+                <div className="flex justify-between items-center mb-3">
                     <Button
                         variant="outline"
                         className="h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
-                        onClick={() => setYear(year - 1)}
+                        onClick={() => onMonthChange('previous')}
                     >
                         <ChevronLeft className="h-4 w-4" />
                     </Button>
                     <Select
-                        value={year.toString()}
-                        onValueChange={(value) => setYear(parseInt(value))}
+                        value={date.getFullYear().toString()}
+                        onValueChange={(value) => setDate(new Date(parseInt(value), date.getMonth(), 1))}
                     >
                         <SelectTrigger className="w-[100px]">
-                            <SelectValue>{year}</SelectValue>
+                            <SelectValue>{date.getFullYear()}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                             {years.map((y) => (
@@ -110,7 +122,7 @@ const PatientForm: React.FC<PatientFormProps> = ({
                     <Button
                         variant="outline"
                         className="h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
-                        onClick={() => setYear(year + 1)}
+                        onClick={() => onMonthChange('next')}
                     >
                         <ChevronRight className="h-4 w-4" />
                     </Button>
@@ -120,8 +132,8 @@ const PatientForm: React.FC<PatientFormProps> = ({
                     selected={selected}
                     onSelect={onSelect}
                     disabled={disabled}
-                    month={new Date(year, selected instanceof Date ? selected.getMonth() : 0)}
-                    onMonthChange={(newMonth) => setYear(newMonth.getFullYear())}
+                    month={date}
+                    onMonthChange={setDate}
                 />
             </div>
         );

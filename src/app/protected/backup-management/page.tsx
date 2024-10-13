@@ -159,7 +159,7 @@ export default function BackupManagementPage() {
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-6">Backup Management</h1>
+            <h1 className="text-3xl font-bold mb-6">Yedek Yönetimi</h1>
 
             {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
             {success && <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</div>}
@@ -170,14 +170,14 @@ export default function BackupManagementPage() {
                     disabled={loading}
                     className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
                 >
-                    Create Backup
+                    Yedek Oluştur
                 </button>
                 <button
                     onClick={() => scheduleBackup('0 0 * * *')}
                     disabled={scheduleStatus.isScheduled}
                     className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
                 >
-                    Schedule Daily Backup
+                    Günlük Yedeklemeyi Başlat
                 </button>
                 <input
                     type="file"
@@ -190,7 +190,7 @@ export default function BackupManagementPage() {
                     onClick={() => fileInputRef.current?.click()}
                     className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
                 >
-                    Restore Backup
+                    Sistemi Yedekten Geri Yükle
                 </button>
             </div>
 
@@ -206,18 +206,18 @@ export default function BackupManagementPage() {
                 </div>
             )}
 
-            <h2 className="text-2xl font-bold mb-4">Backups</h2>
+            <h2 className="text-2xl font-bold mb-4">Yedekler</h2>
             {loading ? (
-                <p className="text-gray-600">Loading...</p>
+                <p className="text-gray-600">Yükleniyor...</p>
             ) : (
                 <div className="overflow-x-auto">
                     <table className="min-w-full bg-white">
                         <thead className="bg-gray-100">
                         <tr>
-                            <th className="py-2 px-4 border-b text-left">File Name</th>
-                            <th className="py-2 px-4 border-b text-left">Created At</th>
-                            <th className="py-2 px-4 border-b text-left">Size</th>
-                            <th className="py-2 px-4 border-b text-left">Actions</th>
+                            <th className="py-2 px-4 border-b text-left">Dosya Adı</th>
+                            <th className="py-2 px-4 border-b text-left">Tarih</th>
+                            <th className="py-2 px-4 border-b text-left">Boyut</th>
+                            <th className="py-2 px-4 border-b text-left">İşlemler</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -231,13 +231,13 @@ export default function BackupManagementPage() {
                                         onClick={() => downloadBackup(backup.fileName)}
                                         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded mr-2 text-sm"
                                     >
-                                        Download
+                                        İndir
                                     </button>
                                     <button
                                         onClick={() => deleteBackup(backup.id)}
                                         className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm"
                                     >
-                                        Delete
+                                        Sil
                                     </button>
                                 </td>
                             </tr>

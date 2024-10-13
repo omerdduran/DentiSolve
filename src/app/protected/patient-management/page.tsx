@@ -187,7 +187,7 @@ const PatientList: React.FC = () => {
         <div className="p-6 min-h-screen">
             <div className="flex flex-col md:flex-row md:items-center mb-6">
                 <h1 className="text-2xl font-bold mb-4 md:mb-0 md:mr-6">Hasta Yönetimi</h1>
-                <Button onClick={() => router.push('/addpatient')}>Hasta Ekle</Button>
+                <Button onClick={() => router.push('/protected/addpatient')}>Hasta Ekle</Button>
             </div>
 
             <div className="mb-4">

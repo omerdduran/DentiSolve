@@ -5,7 +5,7 @@ import {
   DatabaseBackup,
   LayoutGrid,
   Calendar,
-  PersonStanding,
+  Hospital,
   LucideIcon
 } from "lucide-react";
 
@@ -47,7 +47,7 @@ export function getMenuList(pathname: string): Group[] {
         {
           href: "",
           label: "Hasta Yönetimi",
-          icon: PersonStanding,
+          icon: Hospital,
           submenus: [
             {
               href: "/protected/patient-management",
