@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import Image from 'next/image';
 import ModalWrapper from './ModalWrapper';
 import {Patient, Appointment, Xray, PatientFormData} from '@/shared/types';
 import {formatDate} from '@/shared/utils';
@@ -23,7 +24,6 @@ interface PatientModalProps {
     onDelete: () => void,
     onAddAppointment?: (appointment: { title: string; date: string }) => Promise<void>
 }
-
 
 const PatientModal: React.FC<PatientModalProps> = ({
                                                        isOpen,
@@ -51,7 +51,7 @@ const PatientModal: React.FC<PatientModalProps> = ({
         setIsEditing(false);
     };
 
-    // @ts-ignore
+
     return (
         <ModalWrapper isOpen={isOpen} onClose={onClose}>
             <h2 className="text-xl font-bold mb-4">{isEditing ? "Hasta Bilgilerini Düzenle" : "Hasta Detayları"}</h2>
@@ -125,8 +125,14 @@ const PatientModal: React.FC<PatientModalProps> = ({
                                         className="border p-2 rounded cursor-pointer hover:shadow-md transition-shadow"
                                         onClick={() => onXrayClick(xray)}
                                     >
-                                        <img src={xray.imageUrl} alt={xray.findings}
-                                             className="w-full h-24 object-cover mb-1"/>
+                                        <div className="relative w-full h-24 mb-1">
+                                            <Image
+                                                src={xray.imageUrl}
+                                                alt={xray.findings}
+                                                layout="fill"
+                                                objectFit="cover"
+                                            />
+                                        </div>
                                         <p className="text-xs">{formatDate(xray.datePerformed)}: {xray.impression}</p>
                                     </div>
                                 ))}

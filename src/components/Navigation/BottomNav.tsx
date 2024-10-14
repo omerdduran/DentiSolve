@@ -14,6 +14,17 @@ import {
 } from "@/components/ui/popover";
 import { useAuth } from "../../../context/AuthContext";
 
+interface NavMenuItem {
+    href: string;
+    label: string;
+    icon?: React.ComponentType<{ size?: number | string }>;
+    submenus?: NavMenuItem[];
+}
+
+interface MenuGroup {
+    menus: NavMenuItem[];
+}
+
 const MobileBottomNav = () => {
     const pathname = usePathname();
     const router = useRouter();
@@ -44,22 +55,21 @@ const MobileBottomNav = () => {
         }
     };
 
-    // Flatten the menu structure, keeping items with submenus
-    const flatMenu = menuList.reduce((acc, group) => {
+    const flatMenu: NavMenuItem[] = menuList.reduce<NavMenuItem[]>((acc, group: MenuGroup) => {
         return acc.concat(group.menus);
     }, []);
 
     const visibleItems = flatMenu.slice(0, 4);
     const moreItems = flatMenu.slice(4);
 
-    const isActive = (item) => {
+    const isActive = (item: NavMenuItem) => {
         if (item.submenus && item.submenus.length > 0) {
             return item.submenus.some(submenu => pathname.startsWith(submenu.href));
         }
         return pathname === item.href || pathname.startsWith(item.href + '/');
     };
 
-    const renderMenuItem = (item, isInMoreMenu = false) => {
+    const renderMenuItem = (item: NavMenuItem, isInMoreMenu = false) => {
         if (!item) {
             console.error('Invalid menu item:', item);
             return null;

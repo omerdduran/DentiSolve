@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import ModalWrapper from './ModalWrapper';
 
 interface FullScreenXrayModalProps {
@@ -28,8 +29,13 @@ const FullScreenXrayModal: React.FC<FullScreenXrayModalProps> = ({ isOpen, onClo
                 </button>
             </div>
             <div className="flex flex-col md:flex-row">
-                <div className="md:w-2/3 pr-4">
-                    <img src={xRay.imageUrl} alt="X-Ray" className="w-full h-auto object-contain" />
+                <div className="md:w-2/3 pr-4 relative" style={{ height: '500px' }}>
+                    <Image
+                        src={xRay.imageUrl}
+                        alt="X-Ray"
+                        layout="fill"
+                        objectFit="contain"
+                    />
                 </div>
                 <div className="md:w-1/3 mt-4 md:mt-0">
                     <p><strong>Tarih:</strong> {formatDate(xRay.datePerformed)}</p>
