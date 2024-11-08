@@ -68,7 +68,7 @@ export default function Home() {
 
     if (isAuthenticated) {
         console.log('User is already authenticated, redirecting to dashboard');
-        router.push('/dashboard');
+        router.push('protected/dashboard');
         return null;
     }
 
