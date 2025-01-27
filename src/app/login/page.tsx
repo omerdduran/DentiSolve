@@ -32,6 +32,8 @@ export default function LoginPage() {
                 width={250}
                 height={80}
                 className="pt-8 sm:pt-16 md:pt-24 lg:pt-32"
+                priority
+                quality={90}
             />
             <LoginScreen onSuccessfulLogin={handleSuccessfulLogin} />
         </div>

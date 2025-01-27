@@ -265,8 +265,15 @@ const XrayModal: React.FC<XrayModalProps> = ({
                             <Image
                                 src={file ? URL.createObjectURL(file) : editedXray.imageUrl || ''}
                                 alt="X-ray"
-                                layout="fill"
-                                objectFit="contain"
+                                fill
+                                className="object-contain"
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                quality={90}
+                                priority={false}
+                                onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.src = '/placeholder-xray.png';
+                                }}
                                 onLoad={() => {
                                     if (file) {
                                         URL.revokeObjectURL(URL.createObjectURL(file))

@@ -128,9 +128,16 @@ const PatientModal: React.FC<PatientModalProps> = ({
                                         <div className="relative w-full h-24 mb-1">
                                             <Image
                                                 src={xray.imageUrl}
-                                                alt={xray.findings}
-                                                layout="fill"
-                                                objectFit="cover"
+                                                alt={`X-ray for ${patient ? `${patient.firstName} ${patient.lastName}` : 'patient'}`}
+                                                fill
+                                                className="object-contain"
+                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                                quality={90}
+                                                priority={false}
+                                                onError={(e) => {
+                                                    const target = e.target as HTMLImageElement;
+                                                    target.src = '/placeholder-xray.png';
+                                                }}
                                             />
                                         </div>
                                         <p className="text-xs">{formatDate(xray.datePerformed)}: {xray.impression}</p>
