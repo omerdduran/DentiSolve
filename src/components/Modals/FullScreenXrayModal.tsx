@@ -31,7 +31,7 @@ const FullScreenXrayModal: React.FC<FullScreenXrayModalProps> = ({ isOpen, onClo
             <div className="flex flex-col md:flex-row">
                 <div className="md:w-2/3 pr-4 relative" style={{ height: '500px' }}>
                     <Image
-                        src={xRay.imageUrl}
+                        src={xRay.imageUrl || '/placeholder-xray.png'}
                         alt="Full Screen X-ray"
                         fill
                         className="object-contain"
@@ -40,7 +40,9 @@ const FullScreenXrayModal: React.FC<FullScreenXrayModalProps> = ({ isOpen, onClo
                         priority
                         onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src = '/placeholder-xray.png';
+                            if (!target.src.includes('placeholder-xray.png')) {
+                                target.src = '/placeholder-xray.png';
+                            }
                         }}
                     />
                 </div>

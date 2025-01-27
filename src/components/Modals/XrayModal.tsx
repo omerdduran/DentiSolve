@@ -263,7 +263,7 @@ const XrayModal: React.FC<XrayModalProps> = ({
                         <label className="block text-sm font-medium text-gray-700">X-ray:</label>
                         <div className="relative w-full" style={{paddingBottom: '75%'}}>
                             <Image
-                                src={file ? URL.createObjectURL(file) : editedXray.imageUrl || ''}
+                                src={file ? URL.createObjectURL(file) : editedXray.imageUrl || '/placeholder-xray.png'}
                                 alt="X-ray"
                                 fill
                                 className="object-contain"
@@ -272,7 +272,9 @@ const XrayModal: React.FC<XrayModalProps> = ({
                                 priority={false}
                                 onError={(e) => {
                                     const target = e.target as HTMLImageElement;
-                                    target.src = '/placeholder-xray.png';
+                                    if (!target.src.includes('placeholder-xray.png')) {
+                                        target.src = '/placeholder-xray.png';
+                                    }
                                 }}
                                 onLoad={() => {
                                     if (file) {

@@ -127,7 +127,7 @@ const PatientModal: React.FC<PatientModalProps> = ({
                                     >
                                         <div className="relative w-full h-24 mb-1">
                                             <Image
-                                                src={xray.imageUrl}
+                                                src={xray.imageUrl || '/placeholder-xray.png'}
                                                 alt={`X-ray for ${patient ? `${patient.firstName} ${patient.lastName}` : 'patient'}`}
                                                 fill
                                                 className="object-contain"
@@ -136,7 +136,9 @@ const PatientModal: React.FC<PatientModalProps> = ({
                                                 priority={false}
                                                 onError={(e) => {
                                                     const target = e.target as HTMLImageElement;
-                                                    target.src = '/placeholder-xray.png';
+                                                    if (!target.src.includes('placeholder-xray.png')) {
+                                                        target.src = '/placeholder-xray.png';
+                                                    }
                                                 }}
                                             />
                                         </div>
