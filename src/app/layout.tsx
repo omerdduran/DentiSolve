@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 
 
-import { Inter } from "next/font/google";
+import { Inter, Roboto } from "next/font/google";
 import "./globals.css";
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { usePathname } from 'next/navigation';
@@ -15,7 +15,23 @@ import { useStore } from "@/hooks/use-store";
 import { useSidebar } from "@/hooks/use-sidebar";
 import BottomNav from "@/components/Navigation/BottomNav";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+    subsets: ['latin'],
+    display: 'swap',
+    variable: '--font-inter',
+    preload: true,
+    fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif']
+});
+
+const roboto = Roboto({
+    weight: ['400', '500', '700'],
+    style: ['normal', 'italic'],
+    subsets: ['latin'],
+    display: 'swap',
+    variable: '--font-roboto',
+    preload: true,
+    fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Helvetica Neue', 'Arial', 'sans-serif']
+});
 
 function MainContent({ children }: { children: React.ReactNode }) {
     const { isAuthenticated } = useAuth();
@@ -63,13 +79,13 @@ function MainContent({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout({children}: { children: React.ReactNode }) {
     return (
-        <html lang="en">
+        <html lang="en" className={`${inter.variable} ${roboto.variable}`}>
         <head>
             <title>DentiSolve</title>
             <link rel="icon" href="/favicon.ico" />
             <meta name="viewport" content="width=device-width, initial-scale=1" />
         </head>
-        <body className={inter.className}>
+        <body className={`${inter.className} antialiased`}>
         <AuthProvider>
             <MainContent>{children}</MainContent>
             <Toaster />

@@ -84,5 +84,28 @@ body {
     }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: var(--font-inter);
+        font-weight: 600;
+    }
+
+    p, span, div, button, input, textarea, select {
+        font-family: var(--font-roboto);
+    }
+}
+
+/* Calendar specific styles */
+.calendar-view {
+    font-family: var(--font-roboto);
+}
+
+/* Form specific styles */
+.form-input {
+    font-family: var(--font-roboto);
 }
