@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Dental CPMS (Clinical Practice Management System)
 
-## Getting Started
+A modern and user-friendly dental clinic practice management system.
 
-First, run the development server:
+## 🛠 Technology Stack
 
+### Frontend
+- **Framework:** Next.js 13+ (App Router)
+- **Language:** TypeScript
+- **Styling:** TailwindCSS
+- **UI Components:** Shadcn/ui
+- **State Management:** React Context
+
+### Backend
+- **API:** Next.js API Routes
+- **Database ORM:** Prisma
+- **Authentication:** NextAuth.js (inferred from middleware.ts)
+
+## 📁 Project Structure
+
+```
+DentalCPMS/
+├── src/
+│   ├── app/           # Next.js 13 app router pages
+│   ├── components/    # Reusable UI components
+│   ├── hooks/         # Custom React hooks
+│   ├── lib/           # Utility functions
+│   ├── shared/        # Shared resources
+│   └── middleware.ts  # Authentication middleware
+├── prisma/           # Database schema and migrations
+├── public/           # Static assets
+├── types/           # TypeScript type definitions
+├── context/         # React context providers
+└── lib/            # Core utility functions
+```
+
+## 🔑 Key Features
+
+1. Modern web technologies-based interface
+2. Type safety with TypeScript
+3. Database integration with Prisma
+4. Security and authorization system
+5. Modular and reusable component architecture
+
+## 🚀 Installation
+
+1. Clone the project
+```bash
+git clone [repository-url]
+```
+
+2. Install dependencies
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Start the development server
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open in browser
+```
+http://localhost:3000
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🔧 Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+The .env file required to run the project should contain the following variables:
 
-## Learn More
+- DATABASE_URL
+- NEXTAUTH_SECRET
+- NEXTAUTH_URL
+- [Other required environment variables]
 
-To learn more about Next.js, take a look at the following resources:
+## 📚 Documentation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+For detailed documentation, please review the following sections:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+1. [Database Structure](./docs/database.md)
+2. [API Endpoints](./docs/api.md)
+3. [Component Architecture](./docs/components.md)
+4. [Authentication](./docs/auth.md)
 
-## Deploy on Vercel
+## 🤝 Contributing
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## 📝 License
+
+This project is licensed under [LICENSE].

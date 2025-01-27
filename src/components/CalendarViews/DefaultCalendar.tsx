@@ -41,7 +41,13 @@ const DefaultCalendar: React.FC = () => {
 
     const fetchEvents = async () => {
         try {
-            const response = await fetch('/api/events');
+            const response = await fetch('/api/events', {
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            });
             if (!response.ok) throw new Error('Randevular alınamadı');
             const data = await response.json();
             setEvents(data.map((event: any) => ({
@@ -56,7 +62,13 @@ const DefaultCalendar: React.FC = () => {
 
     const fetchPatients = async () => {
         try {
-            const response = await fetch('/api/patients');
+            const response = await fetch('/api/patients', {
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            });
             if (!response.ok) throw new Error('Hastalar getirilemedi');
             const data: Patient[] = await response.json();
             const patientMap = data.reduce((acc, patient) => {

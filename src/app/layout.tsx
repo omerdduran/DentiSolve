@@ -1,4 +1,6 @@
 'use client';
+export const dynamic = 'force-dynamic'
+
 
 import { Inter } from "next/font/google";
 import "./globals.css";
