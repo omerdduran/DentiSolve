@@ -1,12 +1,60 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { Patient, Xray, Appointment } from '@/shared/types';
 import { formatDate } from '@/shared/utils';
-import PatientModal from "@/components/Modals/PatientModal";
-import FullScreenXrayModal from "@/components/Modals/FullScreenXrayModal";
-import {Button} from "@/components/ui/button";
+import dynamic from 'next/dynamic';
+import { Button } from "@/components/ui/button";
+
+// Dinamik importlar
+const PatientModal = dynamic(() => import("@/components/Modals/PatientModal"), {
+    loading: () => <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="bg-white p-6 rounded-lg w-full max-w-2xl animate-pulse">
+            <div className="h-8 bg-gray-200 rounded mb-4" />
+            <div className="h-64 bg-gray-200 rounded" />
+        </div>
+    </div>
+});
+
+const FullScreenXrayModal = dynamic(() => import("@/components/Modals/FullScreenXrayModal"), {
+    loading: () => <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="bg-white p-6 rounded-lg animate-pulse">
+            <div className="h-96 w-96 bg-gray-200 rounded" />
+        </div>
+    </div>
+});
+
+// Optimize edilmiş veri yükleme fonksiyonları
+const fetchPatients = async () => {
+    const response = await fetch('/api/patients', {
+        next: { revalidate: 30 } // 30 saniyelik cache
+    });
+    if (!response.ok) {
+        throw new Error('Failed to fetch patients');
+    }
+    return response.json();
+};
+
+const fetchPatientXrays = async (patientId: number) => {
+    const response = await fetch(`/api/xrays?patientId=${patientId}`, {
+        next: { revalidate: 30 }
+    });
+    if (!response.ok) {
+        throw new Error('Failed to fetch patient X-rays');
+    }
+    return response.json();
+};
+
+const fetchPatientAppointments = async (patientId: number) => {
+    const response = await fetch(`/api/events?patientId=${patientId}`, {
+        next: { revalidate: 30 }
+    });
+    if (!response.ok) {
+        throw new Error('Failed to fetch patient appointments');
+    }
+    return response.json();
+};
 
 const PatientList: React.FC = () => {
     const router = useRouter();
@@ -24,7 +72,16 @@ const PatientList: React.FC = () => {
     const [isXrayModalOpen, setIsXrayModalOpen] = useState(false);
 
     useEffect(() => {
-        void fetchPatients();
+        const loadInitialData = async () => {
+            try {
+                const data = await fetchPatients();
+                setPatients(data);
+                setFilteredPatients(data);
+            } catch (error) {
+                console.error('Error fetching patients:', error);
+            }
+        };
+        void loadInitialData();
     }, []);
 
     useEffect(() => {
@@ -41,59 +98,30 @@ const PatientList: React.FC = () => {
 
     useEffect(() => {
         if (selectedPatient) {
-            void fetchPatientXrays(selectedPatient.id);
-            void fetchPatientAppointments(selectedPatient.id);
+            const loadPatientData = async () => {
+                setIsLoadingXrays(true);
+                setIsLoadingAppointments(true);
+                try {
+                    const [xrayData, appointmentData] = await Promise.all([
+                        fetchPatientXrays(selectedPatient.id),
+                        fetchPatientAppointments(selectedPatient.id)
+                    ]);
+                    setXrays(xrayData.filter((xray: Xray) => xray.patient.id === selectedPatient.id));
+                    setAppointments(appointmentData.filter((appointment: Appointment) => 
+                        appointment.patientId === selectedPatient.id
+                    ));
+                } catch (error) {
+                    console.error('Error loading patient data:', error);
+                    setXrays([]);
+                    setAppointments([]);
+                } finally {
+                    setIsLoadingXrays(false);
+                    setIsLoadingAppointments(false);
+                }
+            };
+            void loadPatientData();
         }
     }, [selectedPatient]);
-
-    const fetchPatients = async (): Promise<void> => {
-        try {
-            const response = await fetch('/api/patients');
-            if (!response.ok) {
-                throw new Error('Failed to fetch patients');
-            }
-            const data = await response.json();
-            setPatients(data);
-            setFilteredPatients(data);
-        } catch (error) {
-            console.error('Error fetching patients:', error);
-        }
-    };
-
-    const fetchPatientXrays = async (patientId: number): Promise<void> => {
-        setIsLoadingXrays(true);
-        try {
-            const response = await fetch(`/api/xrays?patientId=${patientId}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch patient X-rays');
-            }
-            const data = await response.json();
-            setXrays(data.filter((xray: Xray) => xray.patient.id === patientId));
-        } catch (error) {
-            console.error('Error fetching patient X-rays:', error);
-            setXrays([]);
-        } finally {
-            setIsLoadingXrays(false);
-        }
-    };
-
-    const fetchPatientAppointments = async (patientId: number): Promise<void> => {
-        setIsLoadingAppointments(true);
-        try {
-            const response = await fetch(`/api/events?patientId=${patientId}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch patient appointments');
-            }
-            const data = await response.json();
-            const filteredAppointments = data.filter((appointment: Appointment) => appointment.patientId === patientId);
-            setAppointments(filteredAppointments);
-        } catch (error) {
-            console.error('Error fetching patient appointments:', error);
-            setAppointments([]);
-        } finally {
-            setIsLoadingAppointments(false);
-        }
-    };
 
     const handlePatientClick = (patient: Patient): void => {
         setSelectedPatient(patient);
@@ -199,36 +227,49 @@ const PatientList: React.FC = () => {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
             </div>
-            <ul className="space-y-4">
-                {filteredPatients.map(patient => (
-                    <li key={patient.id}
-                        className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-                        onClick={() => handlePatientClick(patient)}>
-                        <span className="font-semibold text-lg">{patient.firstName} {patient.lastName}</span>
-                    </li>
-                ))}
-            </ul>
 
-            <PatientModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                patient={selectedPatient}
-                appointments={appointments}
-                xrays={xrays}
-                onUpdate={handleUpdatePatient}
-                onAddAppointment={handleAddAppointment}
-                onXrayClick={handleXrayClick}
-                isLoadingAppointments={isLoadingAppointments}
-                isLoadingXrays={isLoadingXrays}
-                onDelete={handleDelete}
-            />
+            <Suspense fallback={
+                <div className="space-y-4">
+                    {[1, 2, 3, 4, 5].map(i => (
+                        <div key={i} className="h-16 bg-gray-200 rounded-lg animate-pulse" />
+                    ))}
+                </div>
+            }>
+                <ul className="space-y-4">
+                    {filteredPatients.map(patient => (
+                        <li key={patient.id}
+                            className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                            onClick={() => handlePatientClick(patient)}>
+                            <span className="font-semibold text-lg">{patient.firstName} {patient.lastName}</span>
+                        </li>
+                    ))}
+                </ul>
+            </Suspense>
 
-            <FullScreenXrayModal
-                isOpen={isXrayModalOpen}
-                onClose={() => setIsXrayModalOpen(false)}
-                xRay={selectedXray}
-                formatDate={formatDate}
-            />
+            <Suspense fallback={null}>
+                <PatientModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    patient={selectedPatient}
+                    appointments={appointments}
+                    xrays={xrays}
+                    onUpdate={handleUpdatePatient}
+                    onAddAppointment={handleAddAppointment}
+                    onXrayClick={handleXrayClick}
+                    isLoadingAppointments={isLoadingAppointments}
+                    isLoadingXrays={isLoadingXrays}
+                    onDelete={handleDelete}
+                />
+            </Suspense>
+
+            <Suspense fallback={null}>
+                <FullScreenXrayModal
+                    isOpen={isXrayModalOpen}
+                    onClose={() => setIsXrayModalOpen(false)}
+                    xRay={selectedXray}
+                    formatDate={formatDate}
+                />
+            </Suspense>
         </div>
     );
 };

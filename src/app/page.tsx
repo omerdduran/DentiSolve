@@ -55,7 +55,7 @@ export default function Home() {
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('authToken', token);
         login(token);
-        router.push('protected/dashboard');
+        router.push('/protected/dashboard');
     }, [login, router]);
 
     if (isLoading) {
@@ -68,7 +68,7 @@ export default function Home() {
 
     if (isAuthenticated) {
         console.log('User is already authenticated, redirecting to dashboard');
-        router.push('protected/dashboard');
+        router.push('/protected/dashboard');
         return null;
     }
 

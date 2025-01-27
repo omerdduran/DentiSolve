@@ -1,9 +1,50 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { Button } from "@/components/ui/button"
 import { Patient, Xray } from "@/shared/types";
-import XrayModal from "@/components/Modals/XrayModal";
+
+// Dinamik import
+const XrayModal = dynamic(() => import("@/components/Modals/XrayModal"), {
+    loading: () => (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div className="bg-white p-6 rounded-lg w-full max-w-2xl animate-pulse">
+                <div className="h-8 bg-gray-200 rounded mb-4" />
+                <div className="h-64 bg-gray-200 rounded" />
+            </div>
+        </div>
+    )
+});
+
+// Optimize edilmiş veri yükleme fonksiyonları
+const fetchXraysData = async () => {
+    const response = await fetch('/api/xrays', {
+        next: { revalidate: 30 } // 30 saniyelik cache
+    });
+    if (!response.ok) throw new Error('Failed to fetch X-rays');
+    return response.json();
+};
+
+const fetchPatientsData = async () => {
+    const response = await fetch('/api/patients', {
+        next: { revalidate: 30 }
+    });
+    if (!response.ok) throw new Error('Failed to fetch patients');
+    return response.json();
+};
+
+// Loading Skeleton Component
+const XrayListSkeleton = () => (
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        {[...Array(6)].map((_, i) => (
+            <div key={i} className="border p-4 rounded shadow animate-pulse">
+                <div className="h-6 bg-gray-200 rounded w-3/4 mb-2" />
+                <div className="h-4 bg-gray-200 rounded w-1/2" />
+            </div>
+        ))}
+    </div>
+);
 
 export default function XrayManagement() {
     const [xrays, setXrays] = useState<Xray[]>([]);
@@ -18,9 +59,7 @@ export default function XrayManagement() {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch('/api/xrays');
-            if (!response.ok) throw new Error('Failed to fetch X-rays');
-            const data = await response.json();
+            const data = await fetchXraysData();
             setXrays(data);
         } catch (error) {
             console.error('Error fetching X-rays:', error);
@@ -32,9 +71,7 @@ export default function XrayManagement() {
 
     const fetchPatients = useCallback(async () => {
         try {
-            const response = await fetch('/api/patients');
-            if (!response.ok) throw new Error('Failed to fetch patients');
-            const data = await response.json();
+            const data = await fetchPatientsData();
             setPatients(data);
         } catch (error) {
             console.error('Error fetching patients:', error);
@@ -43,9 +80,23 @@ export default function XrayManagement() {
     }, []);
 
     useEffect(() => {
-        fetchXrays();
-        fetchPatients();
-    }, [fetchXrays, fetchPatients]);
+        const loadInitialData = async () => {
+            try {
+                const [xrayData, patientData] = await Promise.all([
+                    fetchXraysData(),
+                    fetchPatientsData()
+                ]);
+                setXrays(xrayData);
+                setPatients(patientData);
+            } catch (error) {
+                console.error('Error loading initial data:', error);
+                setError('Failed to load data. Please try again.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        void loadInitialData();
+    }, []);
 
     const handleAddXray = useCallback(() => {
         setSelectedXray(null);
@@ -118,7 +169,16 @@ export default function XrayManagement() {
     }, [filteredXrays, handleEditXray]);
 
     if (isLoading) {
-        return <div className="text-center mt-8">X-ray yükleniyor...</div>;
+        return (
+            <div className="p-6 min-h-screen">
+                <div className='flex flex-col md:flex-row md:items-center mb-6'>
+                    <div className="h-8 bg-gray-200 rounded w-48 mb-4 md:mb-0 md:mr-6 animate-pulse" />
+                    <div className="h-10 bg-gray-200 rounded w-32 animate-pulse" />
+                </div>
+                <div className="h-10 bg-gray-200 rounded w-full mb-4 animate-pulse" />
+                <XrayListSkeleton />
+            </div>
+        );
     }
 
     return (
@@ -137,17 +197,21 @@ export default function XrayManagement() {
                 />
             </div>
             {error && <p className="text-red-500 mb-4">{error}</p>}
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                {xrayList}
-            </div>
-            <XrayModal
-                isOpen={isModalOpen}
-                onClose={handleCloseModal}
-                xray={selectedXray}
-                onDelete={handleDelete}
-                onUpdate={handleUpdate}
-                patients={patients}
-            />
+            <Suspense fallback={<XrayListSkeleton />}>
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                    {xrayList}
+                </div>
+            </Suspense>
+            <Suspense fallback={null}>
+                <XrayModal
+                    isOpen={isModalOpen}
+                    onClose={handleCloseModal}
+                    xray={selectedXray}
+                    onDelete={handleDelete}
+                    onUpdate={handleUpdate}
+                    patients={patients}
+                />
+            </Suspense>
         </div>
     );
 }

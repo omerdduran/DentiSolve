@@ -17,19 +17,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccessfulLogin }) => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('Login attempt started'); // Yeni log
+        console.log('Login attempt started');
         setIsLoading(true);
         setError('');
 
         try {
-            console.log('Sending request to /api/login'); // Yeni log
+            console.log('Sending request to /api/login');
             const response = await fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password }),
             });
 
-            console.log('Response received', response.status); // Yeni log
+            console.log('Response received', response.status);
 
             if (response.ok) {
                 const data = await response.json();
@@ -37,18 +37,18 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccessfulLogin }) => {
                 if (onSuccessfulLogin) {
                     onSuccessfulLogin(data.token);
                 }
-                router.push('/dashboard');
+                router.push('/protected/dashboard');  // Yönlendirmeyi değiştirdik
             } else {
                 const errorData = await response.json();
-                console.log('Login failed', errorData); // Yeni log
+                console.log('Login failed', errorData);
                 setError(errorData.message || 'Giriş başarısız oldu. Lütfen tekrar deneyin.');
             }
         } catch (error) {
-            console.error('Error during login:', error); // Değiştirilmiş log
+            console.error('Error during login:', error);
             setError('Bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
         } finally {
             setIsLoading(false);
-            console.log('Login attempt finished'); // Yeni log
+            console.log('Login attempt finished');
         }
     };
 
