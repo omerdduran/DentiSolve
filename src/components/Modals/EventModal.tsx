@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
+import { tr } from 'date-fns/locale'
 import {
     Command,
     CommandEmpty,
@@ -49,8 +50,8 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
     const [patients, setPatients] = useState<Patient[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [open, setOpen] = React.useState(false);
-    const [selectedPatient, setSelectedPatient] = React.useState<Patient | null>(null);
+    const [open, setOpen] = useState(false);
+    const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
@@ -61,41 +62,52 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
     }, [isOpen]);
 
     useEffect(() => {
-        if (isOpen && event) {
-            const start = new Date(event.start);
-            const end = new Date(event.end);
-            setFormData({
-                id: event.id,
-                title: event.title,
-                start: formatTime(start),
-                end: formatTime(end),
-                color: event.color,
-                patientId: event.patientId,
-            });
-            setStartDate(start);
-            setEndDate(end);
-        } else {
-            // Reset form for new event
-            setFormData({
-                id: undefined,
-                title: '',
-                start: '',
-                end: '',
-                color: PRESET_COLORS[0].value,
-                patientId: 0,
-            });
-            setStartDate(undefined);
-            setEndDate(undefined);
-            setSelectedPatient(null);
+        if (isOpen && patients.length > 0) {
+            if (event) {
+                // @ts-ignore
+                const patientId = event.extendedProps?.patientId;
+                
+                // @ts-ignore
+                const start = new Date(event.start || event._instance.range.start);
+                // @ts-ignore
+                const end = new Date(event.end || event._instance.range.end);
+                
+                // Önce hasta seçimini yap
+                const eventPatient = patients.find(p => p.id === patientId);
+                setSelectedPatient(eventPatient || null);
+                
+                // Sonra form verilerini güncelle
+                setFormData({
+                    // @ts-ignore
+                    id: parseInt(event.publicId || event._def.publicId),
+                    // @ts-ignore
+                    title: event.title || event._def.title,
+                    start: formatTime(start),
+                    end: formatTime(end),
+                    // @ts-ignore
+                    color: event.backgroundColor || event._def.ui.backgroundColor,
+                    patientId: patientId
+                });
+                setStartDate(start);
+                setEndDate(end);
+            } else {
+                const now = new Date();
+                const defaultPatient = patients[0];
+                
+                setSelectedPatient(defaultPatient || null);
+                setFormData({
+                    id: undefined,
+                    title: '',
+                    start: formatTime(now),
+                    end: formatTime(now),
+                    color: PRESET_COLORS[0].value,
+                    patientId: defaultPatient?.id || 0
+                });
+                setStartDate(now);
+                setEndDate(now);
+            }
         }
-    }, [isOpen, event]);
-
-    useEffect(() => {
-        if (patients.length > 0 && formData.patientId) {
-            const patient = patients.find(p => p.id === formData.patientId);
-            setSelectedPatient(patient || null);
-        }
-    }, [patients, formData.patientId]);
+    }, [isOpen, event, patients]);
 
     const fetchPatients = async () => {
         setIsLoading(true);
@@ -106,7 +118,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
             setPatients(data);
         } catch (error) {
             console.error('Error fetching patients:', error);
-            setError('Failed to load patients. Please try again.');
+            setError('Hastalar yüklenirken bir hata oluştu');
         } finally {
             setIsLoading(false);
         }
@@ -127,6 +139,12 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        if (!selectedPatient) {
+            setError('Lütfen bir hasta seçin');
+            return;
+        }
+        
         setError(null);
         setIsLoading(true);
 
@@ -143,7 +161,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                 ...formData,
                 start: startDateTime.toISOString(),
                 end: endDateTime.toISOString(),
-                patientId: selectedPatient?.id
+                patientId: selectedPatient.id
             };
 
             const url = formData.id ? `/api/events/${formData.id}` : '/api/events/create';
@@ -162,7 +180,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
             onClose();
         } catch (error) {
             console.error('Error saving event:', error);
-            setError('Failed to save event. Please try again.');
+            setError('Randevu kaydedilirken bir hata oluştu');
         } finally {
             setIsLoading(false);
         }
@@ -195,11 +213,11 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg w-full max-w-md">
-                <h2 className="text-xl font-bold mb-4">{formData.id ? 'Edit Event' : 'Create New Event'}</h2>
+                <h2 className="text-xl font-bold mb-4">{formData.id ? 'Randevuyu Düzenle' : 'Yeni Randevu Ekle'}</h2>
                 {error && <p className="text-red-500 mb-4">{error}</p>}
                 <form onSubmit={handleSubmit}>
                     <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1" htmlFor="title">Title</label>
+                        <label className="block text-sm font-medium mb-1" htmlFor="title">Başlık</label>
                         <input
                             type="text"
                             id="title"
@@ -211,7 +229,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                         />
                     </div>
                     <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1">Start Date</label>
+                        <label className="block text-sm font-medium mb-1">Başlangıç Tarihi</label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
@@ -222,7 +240,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                                     )}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {startDate ? format(startDate, "PPP") : <span>Select date</span>}
+                                    {startDate ? format(startDate, "d MMMM yyyy", { locale: tr }) : <span>Tarih seçin</span>}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
@@ -231,12 +249,13 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                                     selected={startDate}
                                     onSelect={setStartDate}
                                     initialFocus
+                                    locale={tr}
                                 />
                             </PopoverContent>
                         </Popover>
                     </div>
                     <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1" htmlFor="start">Start Time</label>
+                        <label className="block text-sm font-medium mb-1" htmlFor="start">Başlangıç Saati</label>
                         <input
                             type="time"
                             id="start"
@@ -248,7 +267,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                         />
                     </div>
                     <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1">End Date</label>
+                        <label className="block text-sm font-medium mb-1">Bitiş Tarihi</label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
@@ -259,7 +278,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                                     )}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {endDate ? format(endDate, "PPP") : <span>Select date</span>}
+                                    {endDate ? format(endDate, "d MMMM yyyy", { locale: tr }) : <span>Tarih seçin</span>}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
@@ -268,12 +287,13 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                                     selected={endDate}
                                     onSelect={setEndDate}
                                     initialFocus
+                                    locale={tr}
                                 />
                             </PopoverContent>
                         </Popover>
                     </div>
                     <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1" htmlFor="end">End Time</label>
+                        <label className="block text-sm font-medium mb-1" htmlFor="end">Bitiş Saati</label>
                         <input
                             type="time"
                             id="end"
@@ -285,7 +305,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                         />
                     </div>
                     <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1">Patient</label>
+                        <label className="block text-sm font-medium mb-1">Hasta</label>
                         <Popover open={open} onOpenChange={setOpen}>
                             <PopoverTrigger asChild>
                                 <Button
@@ -296,15 +316,15 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                                 >
                                     {selectedPatient
                                         ? `${selectedPatient.firstName} ${selectedPatient.lastName}`
-                                        : "Select patient..."}
+                                        : "Hasta seçin..."}
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-full p-0">
                                 <Command>
-                                    <CommandInput placeholder="Search patient..." />
+                                    <CommandInput placeholder="Hasta ara..." />
                                     <CommandList>
-                                        <CommandEmpty>No patient found.</CommandEmpty>
+                                        <CommandEmpty>Hasta bulunamadı.</CommandEmpty>
                                         <CommandGroup>
                                             {patients.map((patient) => (
                                                 <CommandItem
@@ -332,7 +352,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                         </Popover>
                     </div>
                     <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1">Event Color</label>
+                        <label className="block text-sm font-medium mb-1">Randevu Rengi</label>
                         <div className="mt-2 flex flex-wrap gap-2">
                             {PRESET_COLORS.map((preset) => (
                                 <button
@@ -354,14 +374,14 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                             disabled={isLoading}
                         >
-                            {formData.id ? 'Update' : 'Create'}
+                            {formData.id ? 'Güncelle' : 'Oluştur'}
                         </button>
                         <button
                             type="button"
                             onClick={onClose}
                             className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
                         >
-                            Cancel
+                            İptal
                         </button>
                     </div>
                     {formData.id && (
@@ -372,7 +392,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                                 className='w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600'
                                 disabled={isLoading}
                             >
-                                Delete Event
+                                Randevuyu Sil
                             </button>
                         </div>
                     )}
