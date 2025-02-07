@@ -8,6 +8,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import { EventInput, EventContentArg, CalendarOptions } from '@fullcalendar/core';
 import EventModal from "@/components/Modals/EventModal";
 import { Patient } from "@/shared/types";
+import { PRESET_COLORS } from "@/shared/utils";
 
 interface ExtendedEventInput extends EventInput {
     extendedProps?: {
@@ -84,15 +85,30 @@ const DefaultCalendar: React.FC = () => {
 
     const handleDateSelect = (selectInfo: any) => {
         setSelectedEvent({
+            title: '',
             start: selectInfo.startStr,
             end: selectInfo.endStr,
             allDay: selectInfo.allDay,
+            color: PRESET_COLORS[0].value,
+            extendedProps: {
+                patientId: 0
+            }
         });
         setIsModalOpen(true);
     };
 
     const handleEventClick = (clickInfo: any) => {
-        setSelectedEvent(clickInfo.event);
+        const event = clickInfo.event;
+        setSelectedEvent({
+            id: event.publicId || event._def.publicId,
+            title: event.title || event._def.title,
+            start: event.start || event._instance.range.start,
+            end: event.end || event._instance.range.end,
+            color: event.backgroundColor || event._def.ui.backgroundColor,
+            extendedProps: {
+                patientId: event.extendedProps?.patientId
+            }
+        });
         setIsModalOpen(true);
     };
 

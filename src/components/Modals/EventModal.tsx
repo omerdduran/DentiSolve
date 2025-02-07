@@ -29,11 +29,29 @@ interface EventModalProps {
     onClose: () => void;
     event: {
         id?: number;
-        title: string;
+        publicId?: string;
+        title?: string;
         start: string;
         end: string;
-        color: string;
-        patientId: number;
+        color?: string;
+        patientId?: number;
+        backgroundColor?: string;
+        extendedProps?: {
+            patientId?: number;
+        };
+        _def?: {
+            publicId?: string;
+            title?: string;
+            ui?: {
+                backgroundColor?: string;
+            };
+        };
+        _instance?: {
+            range?: {
+                start: Date;
+                end: Date;
+            };
+        };
     } | null;
     onEventUpdate: (updatedEvent: any) => void;
 }
@@ -64,6 +82,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
     useEffect(() => {
         if (isOpen && patients.length > 0) {
             if (event) {
+                console.log('Event object:', event); // Temporary debug log
                 // @ts-ignore
                 const patientId = event.extendedProps?.patientId;
                 
@@ -78,15 +97,12 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                 
                 // Sonra form verilerini güncelle
                 setFormData({
-                    // @ts-ignore
-                    id: parseInt(event.publicId || event._def.publicId),
-                    // @ts-ignore
-                    title: event.title || event._def.title,
-                    start: formatTime(start),
-                    end: formatTime(end),
-                    // @ts-ignore
-                    color: event.backgroundColor || event._def.ui.backgroundColor,
-                    patientId: patientId
+                    id: event?.id ? Number(event.id) : undefined,
+                    title: event?.title || '',
+                    start: start ? formatTime(start) : '',
+                    end: end ? formatTime(end) : '',
+                    color: event?.color || PRESET_COLORS[0].value,
+                    patientId: patientId || 0
                 });
                 setStartDate(start);
                 setEndDate(end);
