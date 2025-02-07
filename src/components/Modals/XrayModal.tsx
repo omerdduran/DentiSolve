@@ -53,6 +53,7 @@ const XrayModal: React.FC<XrayModalProps> = ({
     const [date, setDate] = useState<Date | undefined>(undefined)
     const [openPatientSelect, setOpenPatientSelect] = useState(false)
     const [selectedPatientId, setSelectedPatientId] = useState<string>("")
+    const [imageError, setImageError] = useState(false)
 
     useEffect(() => {
         if (isOpen) {
@@ -263,22 +264,24 @@ const XrayModal: React.FC<XrayModalProps> = ({
                         <label className="block text-sm font-medium text-gray-700">X-ray:</label>
                         <div className="relative w-full" style={{paddingBottom: '75%'}}>
                             <Image
-                                src={file ? URL.createObjectURL(file) : editedXray.imageUrl || '/placeholder-xray.png'}
+                                src={
+                                    imageError
+                                        ? '/images/placeholder-xray.webp'
+                                        : file
+                                            ? URL.createObjectURL(file)
+                                            : editedXray.imageUrl || '/images/placeholder-xray.webp'
+                                }
                                 alt="X-ray"
                                 fill
                                 className="object-contain"
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                 quality={90}
                                 priority={false}
-                                onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    if (!target.src.includes('placeholder-xray.png')) {
-                                        target.src = '/placeholder-xray.png';
-                                    }
-                                }}
+                                onError={() => setImageError(true)}
                                 onLoad={() => {
+                                    setImageError(false);
                                     if (file) {
-                                        URL.revokeObjectURL(URL.createObjectURL(file))
+                                        URL.revokeObjectURL(URL.createObjectURL(file));
                                     }
                                 }}
                             />
