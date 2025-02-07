@@ -58,10 +58,46 @@ export async function createBackup(): Promise<{ fileName: string; size: number }
     });
 }
 
+async function verifyPhysicalBackup(backup: { fileName: string }): Promise<boolean> {
+    try {
+        const filePath = path.join(BACKUP_DIR, backup.fileName);
+        await fsPromises.access(filePath, fs.constants.F_OK);
+        return true;
+    } catch (error) {
+        console.error(`Physical backup file not found for: ${backup.fileName}`);
+        return false;
+    }
+}
+
 export async function getBackups() {
-    return prisma.backup.findMany({
+    // Get all backups from database
+    const dbBackups = await prisma.backup.findMany({
         orderBy: { createdAt: 'desc' },
     });
+
+    // Verify each backup exists physically
+    const verifiedBackups = await Promise.all(
+        dbBackups.map(async (backup) => {
+            const exists = await verifyPhysicalBackup(backup);
+            if (!exists) {
+                // If physical file doesn't exist, remove from database
+                try {
+                    await prisma.backup.delete({
+                        where: { id: backup.id }
+                    });
+                    console.log(`Removed non-existent backup from database: ${backup.fileName}`);
+                    return null;
+                } catch (error) {
+                    console.error(`Error removing backup from database: ${backup.fileName}`, error);
+                    return null;
+                }
+            }
+            return exists ? backup : null;
+        })
+    );
+
+    // Filter out null values (non-existent backups)
+    return verifiedBackups.filter((backup): backup is NonNullable<typeof backup> => backup !== null);
 }
 
 export async function deleteBackup(id: string): Promise<void> {
