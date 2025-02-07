@@ -223,6 +223,36 @@ const DefaultCalendar: React.FC = () => {
                     font-style: italic;
                     opacity: 0.8;
                 }
+                @media (max-width: 768px) {
+                    .fc .fc-toolbar {
+                        flex-direction: column;
+                        gap: 4px;
+                    }
+                    .fc .fc-toolbar-title {
+                        font-size: 1em;
+                        margin: 0 !important;
+                        padding: 4px 0;
+                    }
+                    .fc .fc-button {
+                        padding: 4px 8px;
+                        font-size: 0.8em;
+                    }
+                    .fc .fc-toolbar-chunk {
+                        display: flex;
+                        gap: 4px;
+                        justify-content: center;
+                        margin: 0 !important;
+                    }
+                    .event-content {
+                        font-size: 0.75em;
+                    }
+                    .fc .fc-daygrid-day-number {
+                        font-size: 0.8em;
+                    }
+                    .fc .fc-toolbar.fc-header-toolbar {
+                        margin-bottom: 8px;
+                    }
+                }
             `}</style>
 
             <FullCalendar {...calendarOptions} />
