@@ -5,6 +5,7 @@ import ModalWrapper from './ModalWrapper'
 import { Patient, Xray } from "@/shared/types"
 import Image from 'next/image'
 import { format, parseISO } from "date-fns"
+import { tr } from 'date-fns/locale'
 import { Calendar as CalendarIcon, Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -212,7 +213,7 @@ const XrayModal: React.FC<XrayModalProps> = ({
                                 )}
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4"/>
-                                {date ? format(date, "PPP") : <span>Tarih seçin</span>}
+                                {date ? format(date, "d MMMM yyyy", { locale: tr }) : <span>Tarih seçin</span>}
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" onClick={(e) => e.stopPropagation()}>
@@ -221,6 +222,7 @@ const XrayModal: React.FC<XrayModalProps> = ({
                                 selected={date}
                                 onSelect={setDate}
                                 initialFocus
+                                locale={tr}
                             />
                         </PopoverContent>
                     </Popover>
