@@ -45,19 +45,9 @@ export function getMenuList(pathname: string): Group[] {
       groupLabel: "",
       menus: [
         {
-          href: "",
+          href: "/protected/patient-management",
           label: "Hasta Yönetimi",
           icon: Hospital,
-          submenus: [
-            {
-              href: "/protected/patient-management",
-              label: "Tüm Hastalar"
-            },
-            {
-              href: "/protected/addpatient",
-              label: "Yeni Hasta Ekle"
-            }
-          ]
         },
         {
           href: "/protected/calendar",
