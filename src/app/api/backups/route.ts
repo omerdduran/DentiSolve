@@ -79,7 +79,7 @@ export async function PUT(request: NextRequest) {
         console.log('Received file:', file.name, 'Size:', file.size);
 
         const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
+        const buffer = new Uint8Array(bytes);
 
         const tempPath = path.join(process.cwd(), 'temp_restore.zip');
         console.log('Temporary file path:', tempPath);
