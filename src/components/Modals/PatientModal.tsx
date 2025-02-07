@@ -41,6 +41,7 @@ const PatientModal: React.FC<PatientModalProps> = ({
     const [isEditing, setIsEditing] = useState(false);
     const [isAppointmentsOpen, setIsAppointmentsOpen] = useState(false);
     const [isXraysOpen, setIsXraysOpen] = useState(false);
+    const [imageErrors, setImageErrors] = useState<{[key: number]: boolean}>({});
 
     if (!isOpen || !patient) return null;
 
@@ -127,18 +128,15 @@ const PatientModal: React.FC<PatientModalProps> = ({
                                     >
                                         <div className="relative w-full h-24 mb-1">
                                             <Image
-                                                src={xray.imageUrl || '/placeholder-xray.png'}
+                                                src={imageErrors[xray.id] ? '/images/placeholder-xray.webp' : (xray.imageUrl || '/images/placeholder-xray.webp')}
                                                 alt={`X-ray for ${patient ? `${patient.firstName} ${patient.lastName}` : 'patient'}`}
                                                 fill
                                                 className="object-contain"
                                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                                 quality={90}
                                                 priority={false}
-                                                onError={(e) => {
-                                                    const target = e.target as HTMLImageElement;
-                                                    if (!target.src.includes('placeholder-xray.png')) {
-                                                        target.src = '/placeholder-xray.png';
-                                                    }
+                                                onError={() => {
+                                                    setImageErrors(prev => ({...prev, [xray.id]: true}));
                                                 }}
                                             />
                                         </div>
