@@ -13,12 +13,15 @@ const MyCalendarListView = dynamic(
   }
 );
 
+// Güncel tedaviler grafiği şimdilik devre dışı
+/*
 const TreatmentDistributionChart = dynamic(
   () => import("@/components/Charts/TreatmentDistributionChart").then(mod => mod.TreatmentDistributionChart),
   {
     loading: () => <div className="h-[300px] w-full animate-pulse bg-gray-200 rounded-lg" />
   }
 );
+*/
 
 const TabSection = dynamic(
   () => import("@/components/Dashboard/TabSection"),
@@ -98,9 +101,11 @@ const Dashboard: React.FC = () => {
                 <Suspense fallback={<div className="h-[300px] animate-pulse bg-gray-200 rounded-lg" />}>
                     <MyCalendarListView />
                 </Suspense>
+                {/* Güncel tedaviler grafiği şimdilik devre dışı
                 <Suspense fallback={<div className="h-[300px] animate-pulse bg-gray-200 rounded-lg" />}>
                     <TreatmentDistributionChart patients={patients} />
                 </Suspense>
+                */}
             </div>
             <Suspense fallback={<div className="h-[200px] animate-pulse bg-gray-200 rounded-lg" />}>
                 <TabSection
