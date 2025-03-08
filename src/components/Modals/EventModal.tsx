@@ -68,13 +68,31 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
         color: PRESET_COLORS[0].value,
         patientId: 0,
     });
-    const [patients, setPatients] = useState<Patient[]>([]);
+    const [patients, setPatients] = useState<Patient[]>(propPatients || []);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+
+    // Varsayılan değerlere sıfırlama fonksiyonu
+    const resetToDefaultValues = () => {
+        const now = new Date();
+        const defaultPatient = patients[0];
+        
+        setSelectedPatient(defaultPatient || null);
+        setFormData({
+            id: undefined,
+            title: '',
+            start: formatTime(now),
+            end: formatTime(now),
+            color: PRESET_COLORS[0].value,
+            patientId: defaultPatient?.id || 0
+        });
+        setStartDate(now);
+        setEndDate(now);
+    };
 
     useEffect(() => {
         if (isOpen) {
@@ -167,25 +185,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
                 resetToDefaultValues();
             }
         }
-    }, [isOpen, event, patients]);
-
-    // Varsayılan değerlere sıfırlama fonksiyonu
-    const resetToDefaultValues = () => {
-        const now = new Date();
-        const defaultPatient = patients[0];
-        
-        setSelectedPatient(defaultPatient || null);
-        setFormData({
-            id: undefined,
-            title: '',
-            start: formatTime(now),
-            end: formatTime(now),
-            color: PRESET_COLORS[0].value,
-            patientId: defaultPatient?.id || 0
-        });
-        setStartDate(now);
-        setEndDate(now);
-    };
+    }, [isOpen, event, patients, resetToDefaultValues]);
 
     const fetchPatients = async () => {
         setIsLoading(true);
