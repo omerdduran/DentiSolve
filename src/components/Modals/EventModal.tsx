@@ -317,13 +317,130 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={startDate}
-                                    onSelect={setStartDate}
-                                    initialFocus
-                                    locale={tr}
-                                />
+                                <div className="p-3">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <button 
+                                            type="button" 
+                                            className="p-1 rounded-full hover:bg-gray-100"
+                                            onClick={() => {
+                                                const prevMonth = new Date(startDate || new Date());
+                                                prevMonth.setMonth(prevMonth.getMonth() - 1);
+                                                setStartDate(prevMonth);
+                                            }}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                        </button>
+                                        <div className="font-medium">
+                                            {startDate ? format(startDate, "MMMM yyyy", { locale: tr }) : format(new Date(), "MMMM yyyy", { locale: tr })}
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            className="p-1 rounded-full hover:bg-gray-100"
+                                            onClick={() => {
+                                                const nextMonth = new Date(startDate || new Date());
+                                                nextMonth.setMonth(nextMonth.getMonth() + 1);
+                                                setStartDate(nextMonth);
+                                            }}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-7 gap-1 mb-2">
+                                        {['PT', 'SA', 'ÇA', 'PE', 'CU', 'CT', 'PZ'].map((day, i) => (
+                                            <div key={i} className="text-center text-xs font-medium text-gray-500">
+                                                {day}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-7 gap-1">
+                                        {(() => {
+                                            const currentDate = startDate || new Date();
+                                            const year = currentDate.getFullYear();
+                                            const month = currentDate.getMonth();
+                                            
+                                            // First day of the month
+                                            const firstDay = new Date(year, month, 1);
+                                            // Last day of the month
+                                            const lastDay = new Date(year, month + 1, 0);
+                                            
+                                            // Get the day of the week for the first day (0 = Sunday, 1 = Monday, etc.)
+                                            let firstDayOfWeek = firstDay.getDay();
+                                            // Adjust for Monday as first day of week
+                                            firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+                                            
+                                            // Calculate days from previous month to display
+                                            const daysFromPrevMonth = firstDayOfWeek;
+                                            
+                                            // Calculate total days to display (previous month + current month + next month)
+                                            const totalDays = daysFromPrevMonth + lastDay.getDate();
+                                            // Ensure we have complete weeks (multiple of 7)
+                                            const totalCells = Math.ceil(totalDays / 7) * 7;
+                                            
+                                            const days = [];
+                                            
+                                            // Previous month days
+                                            const prevMonthLastDay = new Date(year, month, 0).getDate();
+                                            for (let i = 0; i < daysFromPrevMonth; i++) {
+                                                const day = prevMonthLastDay - daysFromPrevMonth + i + 1;
+                                                days.push({
+                                                    date: new Date(year, month - 1, day),
+                                                    day,
+                                                    isCurrentMonth: false,
+                                                    isToday: false
+                                                });
+                                            }
+                                            
+                                            // Current month days
+                                            const today = new Date();
+                                            for (let i = 1; i <= lastDay.getDate(); i++) {
+                                                const date = new Date(year, month, i);
+                                                days.push({
+                                                    date,
+                                                    day: i,
+                                                    isCurrentMonth: true,
+                                                    isToday: 
+                                                        date.getDate() === today.getDate() && 
+                                                        date.getMonth() === today.getMonth() && 
+                                                        date.getFullYear() === today.getFullYear(),
+                                                    isSelected: startDate && 
+                                                        date.getDate() === startDate.getDate() && 
+                                                        date.getMonth() === startDate.getMonth() && 
+                                                        date.getFullYear() === startDate.getFullYear()
+                                                });
+                                            }
+                                            
+                                            // Next month days
+                                            const remainingCells = totalCells - days.length;
+                                            for (let i = 1; i <= remainingCells; i++) {
+                                                days.push({
+                                                    date: new Date(year, month + 1, i),
+                                                    day: i,
+                                                    isCurrentMonth: false,
+                                                    isToday: false
+                                                });
+                                            }
+                                            
+                                            return days.map((day, index) => (
+                                                <button
+                                                    key={index}
+                                                    type="button"
+                                                    className={cn(
+                                                        "h-8 w-8 rounded-full flex items-center justify-center text-sm",
+                                                        !day.isCurrentMonth && "text-gray-400",
+                                                        day.isCurrentMonth && "hover:bg-gray-100",
+                                                        day.isToday && "border border-blue-500",
+                                                        day.isSelected && "bg-blue-500 text-white hover:bg-blue-600"
+                                                    )}
+                                                    onClick={() => setStartDate(day.date)}
+                                                >
+                                                    {day.day}
+                                                </button>
+                                            ));
+                                        })()}
+                                    </div>
+                                </div>
                             </PopoverContent>
                         </Popover>
                     </div>
@@ -355,13 +472,130 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={endDate}
-                                    onSelect={setEndDate}
-                                    initialFocus
-                                    locale={tr}
-                                />
+                                <div className="p-3">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <button 
+                                            type="button" 
+                                            className="p-1 rounded-full hover:bg-gray-100"
+                                            onClick={() => {
+                                                const prevMonth = new Date(endDate || new Date());
+                                                prevMonth.setMonth(prevMonth.getMonth() - 1);
+                                                setEndDate(prevMonth);
+                                            }}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                        </button>
+                                        <div className="font-medium">
+                                            {endDate ? format(endDate, "MMMM yyyy", { locale: tr }) : format(new Date(), "MMMM yyyy", { locale: tr })}
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            className="p-1 rounded-full hover:bg-gray-100"
+                                            onClick={() => {
+                                                const nextMonth = new Date(endDate || new Date());
+                                                nextMonth.setMonth(nextMonth.getMonth() + 1);
+                                                setEndDate(nextMonth);
+                                            }}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-7 gap-1 mb-2">
+                                        {['PT', 'SA', 'ÇA', 'PE', 'CU', 'CT', 'PZ'].map((day, i) => (
+                                            <div key={i} className="text-center text-xs font-medium text-gray-500">
+                                                {day}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-7 gap-1">
+                                        {(() => {
+                                            const currentDate = endDate || new Date();
+                                            const year = currentDate.getFullYear();
+                                            const month = currentDate.getMonth();
+                                            
+                                            // First day of the month
+                                            const firstDay = new Date(year, month, 1);
+                                            // Last day of the month
+                                            const lastDay = new Date(year, month + 1, 0);
+                                            
+                                            // Get the day of the week for the first day (0 = Sunday, 1 = Monday, etc.)
+                                            let firstDayOfWeek = firstDay.getDay();
+                                            // Adjust for Monday as first day of week
+                                            firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+                                            
+                                            // Calculate days from previous month to display
+                                            const daysFromPrevMonth = firstDayOfWeek;
+                                            
+                                            // Calculate total days to display (previous month + current month + next month)
+                                            const totalDays = daysFromPrevMonth + lastDay.getDate();
+                                            // Ensure we have complete weeks (multiple of 7)
+                                            const totalCells = Math.ceil(totalDays / 7) * 7;
+                                            
+                                            const days = [];
+                                            
+                                            // Previous month days
+                                            const prevMonthLastDay = new Date(year, month, 0).getDate();
+                                            for (let i = 0; i < daysFromPrevMonth; i++) {
+                                                const day = prevMonthLastDay - daysFromPrevMonth + i + 1;
+                                                days.push({
+                                                    date: new Date(year, month - 1, day),
+                                                    day,
+                                                    isCurrentMonth: false,
+                                                    isToday: false
+                                                });
+                                            }
+                                            
+                                            // Current month days
+                                            const today = new Date();
+                                            for (let i = 1; i <= lastDay.getDate(); i++) {
+                                                const date = new Date(year, month, i);
+                                                days.push({
+                                                    date,
+                                                    day: i,
+                                                    isCurrentMonth: true,
+                                                    isToday: 
+                                                        date.getDate() === today.getDate() && 
+                                                        date.getMonth() === today.getMonth() && 
+                                                        date.getFullYear() === today.getFullYear(),
+                                                    isSelected: endDate && 
+                                                        date.getDate() === endDate.getDate() && 
+                                                        date.getMonth() === endDate.getMonth() && 
+                                                        date.getFullYear() === endDate.getFullYear()
+                                                });
+                                            }
+                                            
+                                            // Next month days
+                                            const remainingCells = totalCells - days.length;
+                                            for (let i = 1; i <= remainingCells; i++) {
+                                                days.push({
+                                                    date: new Date(year, month + 1, i),
+                                                    day: i,
+                                                    isCurrentMonth: false,
+                                                    isToday: false
+                                                });
+                                            }
+                                            
+                                            return days.map((day, index) => (
+                                                <button
+                                                    key={index}
+                                                    type="button"
+                                                    className={cn(
+                                                        "h-8 w-8 rounded-full flex items-center justify-center text-sm",
+                                                        !day.isCurrentMonth && "text-gray-400",
+                                                        day.isCurrentMonth && "hover:bg-gray-100",
+                                                        day.isToday && "border border-blue-500",
+                                                        day.isSelected && "bg-blue-500 text-white hover:bg-blue-600"
+                                                    )}
+                                                    onClick={() => setEndDate(day.date)}
+                                                >
+                                                    {day.day}
+                                                </button>
+                                            ));
+                                        })()}
+                                    </div>
+                                </div>
                             </PopoverContent>
                         </Popover>
                     </div>
