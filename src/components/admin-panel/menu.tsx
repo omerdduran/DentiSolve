@@ -32,8 +32,13 @@ export function Menu({ isOpen }: MenuProps) {
         try {
             setIsLoggingOut(true);
             console.log('Starting logout process');
-            console.log('Cookie before logout:', document.cookie);
-
+            
+            // Clear client-side storage first
+            localStorage.removeItem('token');
+            localStorage.removeItem('authToken');
+            console.log('Local Storage cleared');
+            
+            // Call the logout API
             const response = await fetch('/api/auth/logout', {
                 method: 'POST',
                 credentials: 'include',
@@ -44,22 +49,29 @@ export function Menu({ isOpen }: MenuProps) {
             if (response.ok) {
                 const data = await response.json();
                 console.log('Logout response data:', data);
-
-                localStorage.removeItem('token');
-                console.log('Local Storage cleared');
-
+                
+                // Update auth context
                 logout();
-
-                console.log('Cookie after logout:', document.cookie);
-
+                
+                // Clear any remaining cookies manually
+                document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                
                 console.log('Logout successful, redirecting...');
                 router.push('/login');
             } else {
                 const errorData = await response.text();
                 console.error('Logout failed:', response.status, errorData);
+                
+                // Still try to redirect even if API fails
+                logout();
+                router.push('/login');
             }
         } catch (error) {
             console.error('Error during logout:', error);
+            
+            // Still try to redirect even if there's an error
+            logout();
+            router.push('/login');
         } finally {
             setIsLoggingOut(false);
         }

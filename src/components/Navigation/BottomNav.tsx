@@ -36,20 +36,38 @@ const MobileBottomNav = () => {
     const handleLogout = async () => {
         try {
             setIsLoggingOut(true);
+            
+            // Clear client-side storage first
+            localStorage.removeItem('token');
+            localStorage.removeItem('authToken');
+            
+            // Call the logout API
             const response = await fetch('/api/auth/logout', {
                 method: 'POST',
                 credentials: 'include',
             });
 
             if (response.ok) {
-                localStorage.removeItem('token');
+                // Update auth context
                 logout();
+                
+                // Clear any remaining cookies manually
+                document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                
                 router.push('/login');
             } else {
                 console.error('Logout failed:', response.status);
+                
+                // Still try to redirect even if API fails
+                logout();
+                router.push('/login');
             }
         } catch (error) {
             console.error('Error during logout:', error);
+            
+            // Still try to redirect even if there's an error
+            logout();
+            router.push('/login');
         } finally {
             setIsLoggingOut(false);
         }
