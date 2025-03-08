@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Patient } from "@/shared/types";
 import { Check, ChevronsUpDown, CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -74,6 +74,28 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+
+    const formatTime = (date: Date): string => {
+        return date.toTimeString().slice(0, 5); // Returns time in HH:MM format
+    };
+
+    // Varsayılan değerlere sıfırlama fonksiyonu
+    const resetToDefaultValues = useCallback(() => {
+        const now = new Date();
+        const defaultPatient = patients[0];
+        
+        setSelectedPatient(defaultPatient || null);
+        setFormData({
+            id: undefined,
+            title: '',
+            start: formatTime(now),
+            end: formatTime(now),
+            color: PRESET_COLORS[0].value,
+            patientId: defaultPatient?.id || 0
+        });
+        setStartDate(now);
+        setEndDate(now);
+    }, [patients, PRESET_COLORS]);
 
     useEffect(() => {
         if (isOpen) {
@@ -162,25 +184,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                 resetToDefaultValues();
             }
         }
-    }, [isOpen, event, patients]);
-
-    // Varsayılan değerlere sıfırlama fonksiyonu
-    const resetToDefaultValues = () => {
-        const now = new Date();
-        const defaultPatient = patients[0];
-        
-        setSelectedPatient(defaultPatient || null);
-        setFormData({
-            id: undefined,
-            title: '',
-            start: formatTime(now),
-            end: formatTime(now),
-            color: PRESET_COLORS[0].value,
-            patientId: defaultPatient?.id || 0
-        });
-        setStartDate(now);
-        setEndDate(now);
-    };
+    }, [isOpen, event, patients, resetToDefaultValues]);
 
     const fetchPatients = async () => {
         setIsLoading(true);
@@ -200,10 +204,6 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const formatTime = (date: Date): string => {
-        return date.toTimeString().slice(0, 5); // Returns time in HH:MM format
     };
 
     const handleColorChange = (color: string) => {
