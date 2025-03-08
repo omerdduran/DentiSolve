@@ -21,7 +21,7 @@ export const AgeDistributionChart: React.FC<AgeDistributionChartProps> = ({ pati
     }));
 
     return (
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="bg-white p-4 rounded-lg shadow-sm">
             <h2 className="text-xl font-semibold mb-4">Age Distribution</h2>
             <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={chartData}>

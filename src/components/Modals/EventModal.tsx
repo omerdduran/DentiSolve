@@ -359,7 +359,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                                     key={preset.value}
                                     type="button"
                                     onClick={() => handleColorChange(preset.value)}
-                                    className={`w-8 h-8 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                                    className={`w-8 h-8 rounded-full focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
                                         formData.color === preset.value ? 'ring-2 ring-offset-2 ring-blue-500' : ''
                                     }`}
                                     style={{ backgroundColor: preset.value }}

@@ -14,7 +14,7 @@ interface ModalProps {
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, content }) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex justify-center items-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-xs flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-2xl shadow-lg max-w-md w-full">
                 <h2 className="text-xl font-semibold mb-4">{title}</h2>
                 <p className="mb-6">{content}</p>

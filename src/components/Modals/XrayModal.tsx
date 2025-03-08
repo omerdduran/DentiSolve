@@ -235,7 +235,7 @@ const XrayModal: React.FC<XrayModalProps> = ({
                         value={editedXray.findings || ''}
                         onChange={handleInputChange}
                         style={{resize: 'none'}}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:border-indigo-300 focus:ring-3 focus:ring-indigo-200 focus:ring-opacity-50"
                         rows={3}
                         required
                     />
@@ -249,7 +249,7 @@ const XrayModal: React.FC<XrayModalProps> = ({
                         value={editedXray.impression || ''}
                         onChange={handleInputChange}
                         style={{resize: 'none'}}  // Inline style ile resize'ı engelliyoruz
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:border-indigo-300 focus:ring-3 focus:ring-indigo-200 focus:ring-opacity-50"
                         rows={3}
                         required
                     />

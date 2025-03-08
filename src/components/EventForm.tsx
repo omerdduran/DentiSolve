@@ -293,7 +293,7 @@ const EventForm: React.FC = () => {
                                 key={preset.value}
                                 type="button"
                                 onClick={() => setFormData(prev => ({ ...prev, color: preset.value }))}
-                                className={`w-8 h-8 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                                className={`w-8 h-8 rounded-full focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
                                     formData.color === preset.value ? 'ring-2 ring-offset-2 ring-blue-500' : ''
                                 }`}
                                 style={{ backgroundColor: preset.value }}
@@ -307,7 +307,7 @@ const EventForm: React.FC = () => {
             <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full px-4 py-2 text-white ${isLoading ? 'bg-gray-400' : 'bg-blue-600'} rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+                className={`w-full px-4 py-2 text-white ${isLoading ? 'bg-gray-400' : 'bg-blue-600'} rounded-md hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
             >
                 {isLoading ? 'Yükleniyor...' : 'Takvime Ekle'}
             </button>

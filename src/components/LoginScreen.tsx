@@ -61,7 +61,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccessfulLogin }) => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
-                    className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 />
                 <input
                     type="password"
@@ -69,7 +69,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccessfulLogin }) => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 />
                 {error && (
                     <p className="text-red-500 text-sm">{error}</p>

@@ -18,7 +18,7 @@ export const TreatmentDistributionChart: React.FC<TreatmentDistributionChartProp
     const pieChartData = Object.entries(treatmentData).map(([name, value]) => ({ name, value }));
 
     return (
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="bg-white p-4 rounded-lg shadow-sm">
             <h2 className="text-xl font-semibold mb-4">Güncel Tedaviler</h2>
             <ResponsiveContainer width="100%" height={300}>
                 <PieChart>

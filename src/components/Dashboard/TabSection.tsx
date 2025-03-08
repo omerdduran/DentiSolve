@@ -25,7 +25,7 @@ const TabSection: React.FC<TabSectionProps> = ({ activeTab, setActiveTab, recent
                 label="Son Röntgenler"
             />
         </div>
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="bg-white p-4 rounded-lg shadow-sm">
             {activeTab === 'patients' ? (
                 <RecentPatients patients={recentPatients} />
             ) : (

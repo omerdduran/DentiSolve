@@ -38,7 +38,7 @@ const fetchPatientsData = async () => {
 const XrayListSkeleton = () => (
     <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {[...Array(6)].map((_, i) => (
-            <div key={i} className="border p-4 rounded shadow animate-pulse">
+            <div key={i} className="border p-4 rounded shadow-sm animate-pulse">
                 <div className="h-6 bg-gray-200 rounded w-3/4 mb-2" />
                 <div className="h-4 bg-gray-200 rounded w-1/2" />
             </div>
@@ -159,7 +159,7 @@ export default function XrayManagement() {
         return filteredXrays.map(xray => (
             <div
                 key={xray.id}
-                className="border p-4 rounded shadow cursor-pointer hover:bg-gray-50"
+                className="border p-4 rounded shadow-sm cursor-pointer hover:bg-gray-50"
                 onClick={() => handleEditXray(xray)}
             >
                 <h3 className="font-bold">{xray.patient.firstName} {xray.patient.lastName}</h3>
@@ -187,7 +187,7 @@ export default function XrayManagement() {
                 <h1 className="text-2xl font-bold mb-4 md:mb-0 md:mr-6">X-ray Yönetimi</h1>
                 <Button onClick={handleAddXray}>Yeni X-ray Ekle</Button>
             </div>
-            <div className="flex-grow md:mr-4 mb-4">
+            <div className="grow md:mr-4 mb-4">
                 <input
                     type="text"
                     placeholder="Hasta adına göre arama yapın"

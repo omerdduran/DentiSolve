@@ -174,7 +174,7 @@ const MobileBottomNav = () => {
         <>
             <div className="h-16 lg:hidden" />
             <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border lg:hidden z-50">
-                <div className="flex justify-between items-center h-16 px-2 max-w-screen-xl mx-auto">
+                <div className="flex justify-between items-center h-16 px-2 max-w-(--breakpoint-xl) mx-auto">
                     {visibleItems.map((item) => renderMenuItem(item))}
 
                     <Popover open={openPopover === 'more'} onOpenChange={(isOpen) => setOpenPopover(isOpen ? 'more' : null)}>
