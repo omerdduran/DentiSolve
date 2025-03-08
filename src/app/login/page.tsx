@@ -25,17 +25,26 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex flex-col items-center min-h-screen bg-ilhanblue">
-            <Image
-                src="/Ilhan-Clinic.png"
-                alt="Clinic Logo"
-                width={250}
-                height={80}
-                className="pt-8 sm:pt-16 md:pt-24 lg:pt-32"
-                priority
-                quality={90}
-            />
+        <div className="min-h-screen bg-[#141824] flex flex-col items-center justify-center p-4">
+            <div className="w-full max-w-md mb-6">
+                <div className="flex justify-center mb-4">
+                    <Image
+                        src="/Ilhan-Clinic.png"
+                        alt="DentiSolve Logo"
+                        width={200}
+                        height={65}
+                        priority
+                        quality={90}
+                        className="drop-shadow-lg"
+                    />
+                </div>
+            </div>
+            
             <LoginScreen onSuccessfulLogin={handleSuccessfulLogin} />
+            
+            <div className="mt-8 text-center text-xs text-gray-400">
+                <p>Güvenli giriş için lütfen kullanıcı adı ve şifrenizi giriniz.</p>
+            </div>
         </div>
     );
 }
