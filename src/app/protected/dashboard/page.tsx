@@ -97,15 +97,10 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="p-6 min-h-screen">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <Suspense fallback={<div className="h-[300px] animate-pulse bg-gray-200 rounded-lg" />}>
+            <div className="mb-6">
+                <Suspense fallback={<div className="h-[400px] animate-pulse bg-gray-200 rounded-lg" />}>
                     <MyCalendarListView />
                 </Suspense>
-                {/* Güncel tedaviler grafiği şimdilik devre dışı
-                <Suspense fallback={<div className="h-[300px] animate-pulse bg-gray-200 rounded-lg" />}>
-                    <TreatmentDistributionChart patients={patients} />
-                </Suspense>
-                */}
             </div>
             <Suspense fallback={<div className="h-[200px] animate-pulse bg-gray-200 rounded-lg" />}>
                 <TabSection

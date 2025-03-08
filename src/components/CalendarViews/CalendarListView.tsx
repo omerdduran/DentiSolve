@@ -3,6 +3,8 @@ import FullCalendar from '@fullcalendar/react';
 import listPlugin from '@fullcalendar/list';
 import { EventClickArg, EventInput, CalendarOptions } from '@fullcalendar/core';
 import {Patient} from "@/shared/types";
+import ModalWrapper from '@/components/Modals/ModalWrapper';
+import { Button } from '@/components/ui/button';
 
 interface ModalProps {
     isOpen: boolean;
@@ -13,16 +15,26 @@ interface ModalProps {
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, content }) => {
     if (!isOpen) return null;
+    
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-xs flex justify-center items-center z-50">
-            <div className="bg-white p-6 rounded-2xl shadow-lg max-w-md w-full">
-                <h2 className="text-xl font-semibold mb-4">{title}</h2>
-                <p className="mb-6">{content}</p>
-                <button onClick={onClose} className="w-full bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition duration-200">
-                    Kapat
-                </button>
+        <ModalWrapper isOpen={isOpen} onClose={onClose}>
+            <div className="space-y-4">
+                <h2 className="text-xl font-semibold">{title}</h2>
+                <div 
+                    className="text-gray-700" 
+                    dangerouslySetInnerHTML={{ __html: content }}
+                />
+                <div className="flex justify-end pt-4">
+                    <Button 
+                        onClick={onClose} 
+                        variant="default"
+                        size="default"
+                    >
+                        Kapat
+                    </Button>
+                </div>
             </div>
-        </div>
+        </ModalWrapper>
     );
 };
 
@@ -76,9 +88,49 @@ const SimpleCalendarListView: React.FC = () => {
         const patientId = event.extendedProps.patientId as number;
         const patient = patients[patientId];
         const patientName = patient ? `${patient.firstName} ${patient.lastName}` : 'Bilinmeyen Hasta';
+        
+        // Tarih ve saat bilgilerini formatla
+        const startDate = event.start ? new Date(event.start) : new Date();
+        const endDate = event.end ? new Date(event.end) : new Date(startDate.getTime() + 30 * 60000); // Varsayılan 30 dk
+        
+        const dateOptions: Intl.DateTimeFormatOptions = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        };
+        const timeOptions: Intl.DateTimeFormatOptions = { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        };
+        
+        const formattedDate = startDate.toLocaleDateString('tr-TR', dateOptions);
+        const startTime = startDate.toLocaleTimeString('tr-TR', timeOptions);
+        const endTime = endDate.toLocaleTimeString('tr-TR', timeOptions);
+        
+        const contentDetails = [
+            { icon: '📅', label: 'Tarih', value: formattedDate },
+            { icon: '⏰', label: 'Saat', value: `${startTime} - ${endTime}` },
+            { icon: '👤', label: 'Hasta', value: patientName },
+        ];
+        
+        if (patient?.homePhone) {
+            contentDetails.push({ icon: '📞', label: 'Telefon', value: patient.homePhone });
+        }
+        
+        const formattedContent = contentDetails
+            .map(detail => `<div class="flex items-start mb-2">
+                <span class="mr-2">${detail.icon}</span>
+                <div>
+                    <span class="font-medium">${detail.label}:</span> 
+                    <span>${detail.value}</span>
+                </div>
+            </div>`)
+            .join('');
+        
         setModalContent({
             title: event.title,
-            content: `Tarih: ${event.start?.toLocaleDateString('tr-TR')}\nHasta: ${patientName}`
+            content: formattedContent
         });
         setModalOpen(true);
     };
@@ -95,7 +147,7 @@ const SimpleCalendarListView: React.FC = () => {
             center: 'title',
             end: 'next'
         },
-        height: 'auto',
+        height: 500,
         firstDay: 1,
         eventClick: handleEventClick,
         noEventsContent: 'Görüntülenecek etkinlik yok',
@@ -106,7 +158,8 @@ const SimpleCalendarListView: React.FC = () => {
             day: 'Gün',
             list: 'Liste'
         },
-        locale: 'tr'
+        locale: 'tr',
+        duration: { weeks: 2 }
     };
 
     if (loading) return <div className="flex justify-center items-center h-64">Yükleniyor...</div>;
@@ -122,30 +175,38 @@ const SimpleCalendarListView: React.FC = () => {
                     }
                     .fc .fc-list-event:hover td {
                         background-color: #f0f0f0;
+                        cursor: pointer;
                     }
                     .fc .fc-list-event-dot {
                         border-color: #007aff;
+                        border-width: 6px;
                     }
                     .fc .fc-list-day-cushion {
                         background-color: #f8f8f8;
+                        padding: 12px 16px;
                     }
                     .fc .fc-list-event-time {
                         color: #666;
+                        font-weight: 500;
+                        font-size: 0.95rem;
                     }
                     .fc .fc-list-event-title {
                         font-weight: 500;
+                        font-size: 0.95rem;
                     }
                     .fc .fc-toolbar-title {
-                        font-size: 1.2em;
+                        font-size: 1.4em;
                         font-weight: 600;
+                        color: #333;
                     }
                     .fc .fc-button {
                         background-color: #f0f0f0;
                         border-color: #e0e0e0;
                         color: #333;
-                        font-weight: 400;
+                        font-weight: 500;
                         text-transform: capitalize;
-                        border-radius: 6px;
+                        border-radius: 8px;
+                        padding: 8px 16px;
                     }
                     .fc .fc-button:hover {
                         background-color: #e0e0e0;
@@ -154,6 +215,17 @@ const SimpleCalendarListView: React.FC = () => {
                     .fc .fc-button:active,
                     .fc .fc-button:focus {
                         box-shadow: 0 0 0 0.2rem rgba(0,122,255,.25);
+                    }
+                    .fc-theme-standard .fc-list {
+                        border: 1px solid #eaeaea;
+                        border-radius: 8px;
+                    }
+                    .fc-theme-standard .fc-list-day-side-text {
+                        font-weight: 600;
+                    }
+                    .fc-theme-standard td, 
+                    .fc-theme-standard th {
+                        border-color: #eaeaea;
                     }
                 `}</style>
                 <FullCalendar {...calendarOptions} />
