@@ -22,6 +22,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import {PRESET_COLORS} from "@/shared/utils";
+import ModalWrapper from './ModalWrapper';
 
 
 interface EventModalProps {
@@ -29,16 +30,35 @@ interface EventModalProps {
     onClose: () => void;
     event: {
         id?: number;
-        title: string;
-        start: string;
-        end: string;
-        color: string;
-        patientId: number;
+        title?: string;
+        start?: string | Date;
+        end?: string | Date;
+        color?: string;
+        backgroundColor?: string;
+        patientId?: number;
+        publicId?: string;
+        extendedProps?: {
+            patientId?: number;
+        };
+        _instance?: {
+            range?: {
+                start?: Date;
+                end?: Date;
+            };
+        };
+        _def?: {
+            publicId?: string;
+            title?: string;
+            ui?: {
+                backgroundColor?: string;
+            };
+        };
     } | null;
     onEventUpdate: (updatedEvent: any) => void;
+    onLoaded?: () => void;
 }
 
-const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEventUpdate }) => {
+const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEventUpdate, onLoaded }) => {
     const [formData, setFormData] = useState({
         id: undefined as number | undefined,
         title: '',
@@ -58,56 +78,109 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
     useEffect(() => {
         if (isOpen) {
             fetchPatients();
+            if (onLoaded) {
+                onLoaded();
+            }
         }
-    }, [isOpen]);
+    }, [isOpen, onLoaded]);
 
     useEffect(() => {
         if (isOpen && patients.length > 0) {
             if (event) {
-                // @ts-ignore
-                const patientId = event.extendedProps?.patientId;
-                
-                // @ts-ignore
-                const start = new Date(event.start || event._instance.range.start);
-                // @ts-ignore
-                const end = new Date(event.end || event._instance.range.end);
-                
-                // Önce hasta seçimini yap
-                const eventPatient = patients.find(p => p.id === patientId);
-                setSelectedPatient(eventPatient || null);
-                
-                // Sonra form verilerini güncelle
-                setFormData({
-                    // @ts-ignore
-                    id: parseInt(event.publicId || event._def.publicId),
-                    // @ts-ignore
-                    title: event.title || event._def.title,
-                    start: formatTime(start),
-                    end: formatTime(end),
-                    // @ts-ignore
-                    color: event.backgroundColor || event._def.ui.backgroundColor,
-                    patientId: patientId
-                });
-                setStartDate(start);
-                setEndDate(end);
+                try {
+                    // Güvenli bir şekilde patientId'yi al
+                    const patientId = event.patientId || 
+                                     (event.extendedProps && event.extendedProps.patientId) || 
+                                     0;
+                    
+                    // Güvenli bir şekilde start ve end tarihlerini al
+                    let start: Date;
+                    let end: Date;
+                    
+                    if (typeof event.start === 'string') {
+                        start = new Date(event.start);
+                    } else if (event.start instanceof Date) {
+                        start = event.start;
+                    } else if (event._instance && event._instance.range && event._instance.range.start) {
+                        start = new Date(event._instance.range.start);
+                    } else {
+                        start = new Date();
+                    }
+                    
+                    if (typeof event.end === 'string') {
+                        end = new Date(event.end);
+                    } else if (event.end instanceof Date) {
+                        end = event.end;
+                    } else if (event._instance && event._instance.range && event._instance.range.end) {
+                        end = new Date(event._instance.range.end);
+                    } else {
+                        // End tarihi yoksa start tarihinden 1 saat sonrasını kullan
+                        end = new Date(start);
+                        end.setHours(end.getHours() + 1);
+                    }
+                    
+                    // Hasta seçimini yap
+                    const eventPatient = patients.find(p => p.id === patientId);
+                    setSelectedPatient(eventPatient || null);
+                    
+                    // Form verilerini güncelle
+                    let eventId: number | undefined;
+                    if (event.id) {
+                        eventId = event.id;
+                    } else if (event.publicId && typeof event.publicId === 'string') {
+                        eventId = parseInt(event.publicId);
+                    } else if (event._def && event._def.publicId) {
+                        eventId = parseInt(event._def.publicId);
+                    }
+                    
+                    const eventTitle = event.title || 
+                                      (event._def && event._def.title) || 
+                                      '';
+                    
+                    const eventColor = event.color || 
+                                      event.backgroundColor || 
+                                      (event._def && event._def.ui && event._def.ui.backgroundColor) || 
+                                      PRESET_COLORS[0].value;
+                    
+                    setFormData({
+                        id: eventId,
+                        title: eventTitle,
+                        start: formatTime(start),
+                        end: formatTime(end),
+                        color: eventColor,
+                        patientId: patientId
+                    });
+                    
+                    setStartDate(start);
+                    setEndDate(end);
+                } catch (error) {
+                    console.error('Event verisi işlenirken hata oluştu:', error);
+                    // Hata durumunda varsayılan değerleri kullan
+                    resetToDefaultValues();
+                }
             } else {
-                const now = new Date();
-                const defaultPatient = patients[0];
-                
-                setSelectedPatient(defaultPatient || null);
-                setFormData({
-                    id: undefined,
-                    title: '',
-                    start: formatTime(now),
-                    end: formatTime(now),
-                    color: PRESET_COLORS[0].value,
-                    patientId: defaultPatient?.id || 0
-                });
-                setStartDate(now);
-                setEndDate(now);
+                resetToDefaultValues();
             }
         }
     }, [isOpen, event, patients]);
+
+    // Varsayılan değerlere sıfırlama fonksiyonu
+    const resetToDefaultValues = () => {
+        const now = new Date();
+        const defaultPatient = patients[0];
+        
+        setSelectedPatient(defaultPatient || null);
+        setFormData({
+            id: undefined,
+            title: '',
+            start: formatTime(now),
+            end: formatTime(now),
+            color: PRESET_COLORS[0].value,
+            patientId: defaultPatient?.id || 0
+        });
+        setStartDate(now);
+        setEndDate(now);
+    };
 
     const fetchPatients = async () => {
         setIsLoading(true);
@@ -211,8 +284,8 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <div className="bg-white p-6 rounded-lg w-full max-w-md">
+        <ModalWrapper isOpen={isOpen} onClose={onClose}>
+            <div className="w-full max-w-md">
                 <h2 className="text-xl font-bold mb-4">{formData.id ? 'Randevuyu Düzenle' : 'Yeni Randevu Ekle'}</h2>
                 {error && <p className="text-red-500 mb-4">{error}</p>}
                 <form onSubmit={handleSubmit}>
@@ -329,7 +402,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                                             {patients.map((patient) => (
                                                 <CommandItem
                                                     key={patient.id}
-                                                    value={`${patient.firstName} ${patient.lastName}`}
+                                                    value={patient.id.toString()}
                                                     onSelect={() => {
                                                         setSelectedPatient(patient);
                                                         setFormData(prev => ({ ...prev, patientId: patient.id }));
@@ -342,7 +415,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                                                             selectedPatient?.id === patient.id ? "opacity-100" : "opacity-0"
                                                         )}
                                                     />
-                                                    {`${patient.firstName} ${patient.lastName}`}
+                                                    {patient.firstName} {patient.lastName}
                                                 </CommandItem>
                                             ))}
                                         </CommandGroup>
@@ -352,53 +425,50 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
                         </Popover>
                     </div>
                     <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1">Randevu Rengi</label>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                            {PRESET_COLORS.map((preset) => (
+                        <label className="block text-sm font-medium mb-1">Renk</label>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                            {PRESET_COLORS.map((colorOption) => (
                                 <button
-                                    key={preset.value}
+                                    key={colorOption.value}
                                     type="button"
-                                    onClick={() => handleColorChange(preset.value)}
-                                    className={`w-8 h-8 rounded-full focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                                        formData.color === preset.value ? 'ring-2 ring-offset-2 ring-blue-500' : ''
-                                    }`}
-                                    style={{ backgroundColor: preset.value }}
-                                    title={preset.name}
+                                    className={`w-8 h-8 rounded-full border-2 ${formData.color === colorOption.value ? 'border-black' : 'border-transparent'}`}
+                                    style={{ backgroundColor: colorOption.value }}
+                                    onClick={() => handleColorChange(colorOption.value)}
+                                    aria-label={`Renk: ${colorOption.name}`}
                                 />
                             ))}
                         </div>
                     </div>
-                    <div className="flex justify-between">
-                        <button
-                            type="submit"
-                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                            disabled={isLoading}
-                        >
-                            {formData.id ? 'Güncelle' : 'Oluştur'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
-                        >
-                            İptal
-                        </button>
-                    </div>
-                    {formData.id && (
-                        <div className="mt-4">
-                            <button
+                    <div className="flex justify-between mt-6">
+                        {formData.id && (
+                            <Button
                                 type="button"
+                                variant="destructive"
                                 onClick={handleDelete}
-                                className='w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600'
                                 disabled={isLoading}
                             >
-                                Randevuyu Sil
-                            </button>
+                                {isLoading ? 'Siliniyor...' : 'Sil'}
+                            </Button>
+                        )}
+                        <div className="flex gap-2 ml-auto">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={onClose}
+                            >
+                                İptal
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? 'Kaydediliyor...' : 'Kaydet'}
+                            </Button>
                         </div>
-                    )}
+                    </div>
                 </form>
             </div>
-        </div>
+        </ModalWrapper>
     );
 };
 
