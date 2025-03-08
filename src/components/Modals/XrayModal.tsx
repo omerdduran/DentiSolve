@@ -33,6 +33,7 @@ interface XrayModalProps {
     onDelete: (id: number) => void
     onUpdate: (id: number | null, data: Partial<Xray>) => void
     patients: Patient[]
+    onLoaded?: () => void
 }
 
 const XrayModal: React.FC<XrayModalProps> = ({
@@ -41,7 +42,8 @@ const XrayModal: React.FC<XrayModalProps> = ({
                                                  xray,
                                                  onDelete,
                                                  onUpdate,
-                                                 patients
+                                                 patients,
+                                                 onLoaded
                                              }) => {
     const [editedXray, setEditedXray] = useState<Partial<Xray>>({
         datePerformed: '',
@@ -74,8 +76,11 @@ const XrayModal: React.FC<XrayModalProps> = ({
                 setDate(now)
                 setSelectedPatientId(patients[0]?.id.toString() || "")
             }
+            if (onLoaded) {
+                onLoaded()
+            }
         }
-    }, [isOpen, xray, patients])
+    }, [isOpen, xray, patients, onLoaded])
 
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target

@@ -7,14 +7,8 @@ import { Patient, Xray } from "@/shared/types";
 
 // Dinamik import
 const XrayModal = dynamic(() => import("@/components/Modals/XrayModal"), {
-    loading: () => (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div className="bg-white p-6 rounded-lg w-full max-w-2xl animate-pulse">
-                <div className="h-8 bg-gray-200 rounded mb-4" />
-                <div className="h-64 bg-gray-200 rounded" />
-            </div>
-        </div>
-    )
+    loading: () => null,
+    ssr: false
 });
 
 // Optimize edilmiş veri yükleme fonksiyonları
@@ -40,7 +34,8 @@ const XrayListSkeleton = () => (
         {[...Array(6)].map((_, i) => (
             <div key={i} className="border p-4 rounded shadow-sm animate-pulse">
                 <div className="h-6 bg-gray-200 rounded w-3/4 mb-2" />
-                <div className="h-4 bg-gray-200 rounded w-1/2" />
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2" />
+                <div className="h-4 bg-gray-200 rounded w-1/3" />
             </div>
         ))}
     </div>
@@ -52,6 +47,7 @@ export default function XrayManagement() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedXray, setSelectedXray] = useState<Xray | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isModalLoading, setIsModalLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -99,11 +95,13 @@ export default function XrayManagement() {
     }, []);
 
     const handleAddXray = useCallback(() => {
+        setIsModalLoading(true);
         setSelectedXray(null);
         setIsModalOpen(true);
     }, []);
 
     const handleEditXray = useCallback((xray: Xray) => {
+        setIsModalLoading(true);
         setSelectedXray(xray);
         setIsModalOpen(true);
     }, []);
@@ -111,6 +109,7 @@ export default function XrayManagement() {
     const handleCloseModal = useCallback(() => {
         setIsModalOpen(false);
         setSelectedXray(null);
+        setIsModalLoading(false);
     }, []);
 
     const handleUpdate = useCallback(async (id: number | null, data: Partial<Xray>) => {
@@ -171,11 +170,11 @@ export default function XrayManagement() {
     if (isLoading) {
         return (
             <div className="p-6 min-h-screen">
-                <div className='flex flex-col md:flex-row md:items-center mb-6'>
-                    <div className="h-8 bg-gray-200 rounded w-48 mb-4 md:mb-0 md:mr-6 animate-pulse" />
+                <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                    <div className="h-8 bg-gray-200 rounded w-48 mb-4 md:mb-0 animate-pulse" />
                     <div className="h-10 bg-gray-200 rounded w-32 animate-pulse" />
                 </div>
-                <div className="h-10 bg-gray-200 rounded w-full mb-4 animate-pulse" />
+                <div className="h-10 bg-gray-200 rounded w-full mb-6 animate-pulse" />
                 <XrayListSkeleton />
             </div>
         );
@@ -183,11 +182,11 @@ export default function XrayManagement() {
 
     return (
         <div className="p-6 min-h-screen">
-            <div className='flex flex-col md:flex-row md:items-center mb-6'>
-                <h1 className="text-2xl font-bold mb-4 md:mb-0 md:mr-6">X-ray Yönetimi</h1>
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                <h1 className="text-2xl font-bold mb-4 md:mb-0">X-ray Yönetimi</h1>
                 <Button onClick={handleAddXray}>Yeni X-ray Ekle</Button>
             </div>
-            <div className="grow md:mr-4 mb-4">
+            <div className="mb-6">
                 <input
                     type="text"
                     placeholder="Hasta adına göre arama yapın"
@@ -202,7 +201,27 @@ export default function XrayManagement() {
                     {xrayList}
                 </div>
             </Suspense>
-            <Suspense fallback={null}>
+            
+            {isModalLoading && isModalOpen && (
+                <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md animate-pulse overflow-y-auto scrollbar-hide">
+                        <div className="h-8 bg-gray-200 rounded mb-4" />
+                        <div className="space-y-4">
+                            <div className="h-10 bg-gray-200 rounded" />
+                            <div className="h-10 bg-gray-200 rounded" />
+                            <div className="h-24 bg-gray-200 rounded" />
+                            <div className="h-24 bg-gray-200 rounded" />
+                            <div className="h-40 bg-gray-200 rounded" />
+                            <div className="flex justify-between mt-4">
+                                <div className="h-10 bg-gray-200 rounded w-24" />
+                                <div className="h-10 bg-gray-200 rounded w-24" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            {isModalOpen && (
                 <XrayModal
                     isOpen={isModalOpen}
                     onClose={handleCloseModal}
@@ -210,8 +229,9 @@ export default function XrayManagement() {
                     onDelete={handleDelete}
                     onUpdate={handleUpdate}
                     patients={patients}
+                    onLoaded={() => setIsModalLoading(false)}
                 />
-            </Suspense>
+            )}
         </div>
     );
 }
