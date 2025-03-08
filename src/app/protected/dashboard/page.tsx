@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { Patient, Xray } from '@/shared/types';
+import { usePatients, useXrays } from '@/hooks/use-query-hooks';
 
 // Dinamik importlar
 const MyCalendarListView = dynamic(
@@ -30,55 +31,12 @@ const TabSection = dynamic(
   }
 );
 
-// Optimize edilmiş veri yükleme fonksiyonları
-const fetchPatients = async () => {
-    const response = await fetch('/api/patients', {
-        next: { revalidate: 60 } // 60 saniyelik cache
-    });
-    return response.json();
-};
-
-const fetchXrays = async () => {
-    const response = await fetch('/api/xrays', {
-        next: { revalidate: 60 }
-    });
-    return response.json();
-};
-
-const fetchApiData = async () => {
-    try {
-        const [patientsData, xraysData] = await Promise.all([
-            fetchPatients(),
-            fetchXrays()
-        ]);
-        return { patientsData, xraysData };
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        throw error;
-    }
-};
-
 const Dashboard: React.FC = () => {
-    const [patients, setPatients] = useState<Patient[]>([]);
-    const [xrays, setXrays] = useState<Xray[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: patients = [], isLoading: patientsLoading } = usePatients();
+    const { data: xrays = [], isLoading: xraysLoading } = useXrays();
     const [activeTab, setActiveTab] = useState('patients');
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const loadData = async () => {
-        try {
-            const { patientsData, xraysData } = await fetchApiData();
-            setPatients(patientsData);
-            setXrays(xraysData);
-        } catch (error) {
-            console.error('Error fetching data:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const loading = patientsLoading || xraysLoading;
 
     if (loading) {
         return (

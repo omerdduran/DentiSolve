@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -9,79 +9,40 @@ import { EventInput, EventContentArg, CalendarOptions } from '@fullcalendar/core
 import EventModal from "@/components/Modals/EventModal";
 import { Patient } from "@/shared/types";
 import { PRESET_COLORS } from "@/shared/utils";
+import { useEvents, usePatients, QUERY_KEYS } from '@/hooks/use-query-hooks';
+import { useQueryClient } from '@tanstack/react-query';
 
-interface ExtendedEventInput extends EventInput {
+interface ExtendedEventInput extends Omit<EventInput, 'id'> {
+    id?: number;
     extendedProps?: {
         patientId?: number;
     };
 }
 
 const DefaultCalendar: React.FC = () => {
-    const [events, setEvents] = useState<ExtendedEventInput[]>([]);
-    const [patients, setPatients] = useState<{ [key: number]: Patient }>({});
+    const { data: eventsData = [], isLoading: eventsLoading, error: eventsError, refetch: refetchEvents } = useEvents();
+    const { data: patientsData = [], isLoading: patientsLoading } = usePatients();
+    const queryClient = useQueryClient();
+    
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<ExtendedEventInput | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                await Promise.all([fetchEvents(), fetchPatients()]);
-            } catch (err) {
-                setError('Veri yüklenemedi. Lütfen daha sonra tekrar deneyin.');
-            } finally {
-                setLoading(false);
-            }
-        };
+    // Convert patients array to a map for easier lookup
+    const patients = useMemo(() => {
+        return patientsData.reduce((acc, patient) => {
+            acc[patient.id] = patient;
+            return acc;
+        }, {} as { [key: number]: Patient });
+    }, [patientsData]);
 
-        fetchData();
-    }, []);
-
-    const fetchEvents = async () => {
-        try {
-            const response = await fetch('/api/events', {
-                cache: 'no-store',
-                headers: {
-                    'Cache-Control': 'no-cache',
-                    'Pragma': 'no-cache'
-                }
-            });
-            if (!response.ok) throw new Error('Randevular alınamadı');
-            const data = await response.json();
-            setEvents(data.map((event: any) => ({
-                ...event,
-                extendedProps: { patientId: event.patientId }
-            })));
-        } catch (error) {
-            console.error('Olayları getirirken hata oluştu:', error);
-            throw error;
-        }
-    };
-
-    const fetchPatients = async () => {
-        try {
-            const response = await fetch('/api/patients', {
-                cache: 'no-store',
-                headers: {
-                    'Cache-Control': 'no-cache',
-                    'Pragma': 'no-cache'
-                }
-            });
-            if (!response.ok) throw new Error('Hastalar getirilemedi');
-            const data: Patient[] = await response.json();
-            const patientMap = data.reduce((acc, patient) => {
-                acc[patient.id] = patient;
-                return acc;
-            }, {} as { [key: number]: Patient });
-            setPatients(patientMap);
-        } catch (error) {
-            console.error('Hastaları getirirken hata oluştu:', error);
-            throw error;
-        }
-    };
+    // Format events for the calendar
+    const events = useMemo(() => {
+        return eventsData.map((event: any) => ({
+            ...event,
+            id: typeof event.id === 'string' ? parseInt(event.id, 10) : event.id,
+            extendedProps: { patientId: event.patientId }
+        }));
+    }, [eventsData]);
 
     const handleDateSelect = (selectInfo: any) => {
         setSelectedEvent({
@@ -100,7 +61,7 @@ const DefaultCalendar: React.FC = () => {
     const handleEventClick = (clickInfo: any) => {
         const event = clickInfo.event;
         setSelectedEvent({
-            id: event.publicId || event._def.publicId,
+            id: event.publicId ? parseInt(event.publicId, 10) : event._def.publicId ? parseInt(event._def.publicId, 10) : undefined,
             title: event.title || event._def.title,
             start: event.start || event._instance.range.start,
             end: event.end || event._instance.range.end,
@@ -112,17 +73,11 @@ const DefaultCalendar: React.FC = () => {
         setIsModalOpen(true);
     };
 
-    const handleEventUpdate = async (updatedEvent: ExtendedEventInput) => {
-        if (updatedEvent.id) {
-            if ('deleted' in updatedEvent && updatedEvent.deleted) {
-                setEvents(events.filter(e => e.id !== updatedEvent.id));
-            } else {
-                setEvents(events.map(e => e.id === updatedEvent.id ? updatedEvent : e));
-            }
-        } else {
-            setEvents([...events, updatedEvent]);
-        }
-        await fetchEvents();
+    const handleEventUpdate = async () => {
+        // Tüm ilgili verileri yenile
+        await refetchEvents();
+        // Hasta verilerini de yenile
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PATIENTS] });
     };
 
     const eventContent = (eventInfo: EventContentArg) => {
@@ -183,6 +138,9 @@ const DefaultCalendar: React.FC = () => {
         aspectRatio: 1.8,
         themeSystem: 'standard',
     };
+
+    const loading = eventsLoading || patientsLoading;
+    const error = eventsError ? String(eventsError) : null;
 
     if (loading) return <div>Yükleniyor...</div>;
     if (error) return <div>Hata: {error}</div>;
@@ -249,39 +207,16 @@ const DefaultCalendar: React.FC = () => {
                         margin: 0 !important;
                         padding: 4px 0;
                     }
-                    .fc .fc-button {
-                        padding: 4px 8px;
-                        font-size: 0.8em;
-                    }
-                    .fc .fc-toolbar-chunk {
-                        display: flex;
-                        gap: 4px;
-                        justify-content: center;
-                        margin: 0 !important;
-                    }
-                    .event-content {
-                        font-size: 0.75em;
-                    }
-                    .fc .fc-daygrid-day-number {
-                        font-size: 0.8em;
-                    }
-                    .fc .fc-toolbar.fc-header-toolbar {
-                        margin-bottom: 8px;
-                    }
                 }
             `}</style>
-
             <FullCalendar {...calendarOptions} />
             {isModalOpen && (
                 <EventModal
                     isOpen={isModalOpen}
-                    onClose={() => {
-                        setIsModalOpen(false);
-                        setSelectedEvent(null);
-                    }}
-                    // @ts-ignore
+                    onClose={() => setIsModalOpen(false)}
                     event={selectedEvent}
-                    onEventUpdate={handleEventUpdate}
+                    patients={patientsData}
+                    onUpdate={handleEventUpdate}
                 />
             )}
         </div>

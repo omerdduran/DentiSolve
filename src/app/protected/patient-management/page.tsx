@@ -6,6 +6,14 @@ import { Patient, Xray, Appointment } from '@/shared/types';
 import { formatDate } from '@/shared/utils';
 import dynamic from 'next/dynamic';
 import { Button } from "@/components/ui/button";
+import { 
+    usePatients, 
+    usePatientXrays, 
+    usePatientAppointments, 
+    useUpdatePatient, 
+    useDeletePatient, 
+    useCreateAppointment 
+} from '@/hooks/use-query-hooks';
 
 // Dinamik importlar
 const PatientModal = dynamic(() => import("@/components/Modals/PatientModal"), {
@@ -18,105 +26,53 @@ const FullScreenXrayModal = dynamic(() => import("@/components/Modals/FullScreen
     ssr: false
 });
 
-// Optimize edilmiş veri yükleme fonksiyonları
-const fetchPatients = async () => {
-    const response = await fetch('/api/patients', {
-        next: { revalidate: 30 } // 30 saniyelik cache
-    });
-    if (!response.ok) {
-        throw new Error('Failed to fetch patients');
-    }
-    return response.json();
-};
-
-const fetchPatientXrays = async (patientId: number) => {
-    const response = await fetch(`/api/xrays?patientId=${patientId}`, {
-        next: { revalidate: 30 }
-    });
-    if (!response.ok) {
-        throw new Error('Failed to fetch patient X-rays');
-    }
-    return response.json();
-};
-
-const fetchPatientAppointments = async (patientId: number) => {
-    const response = await fetch(`/api/events?patientId=${patientId}`, {
-        next: { revalidate: 30 }
-    });
-    if (!response.ok) {
-        throw new Error('Failed to fetch patient appointments');
-    }
-    return response.json();
-};
-
 const PatientList: React.FC = () => {
     const router = useRouter();
-
-    const [patients, setPatients] = useState<Patient[]>([]);
+    const { data: patients = [], isLoading: isLoadingPatients } = usePatients();
+    
     const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [isPatientModalLoading, setIsPatientModalLoading] = useState<boolean>(false);
     const [isXrayModalLoading, setIsXrayModalLoading] = useState<boolean>(false);
-    const [isLoadingXrays, setIsLoadingXrays] = useState<boolean>(false);
-    const [isLoadingAppointments, setIsLoadingAppointments] = useState<boolean>(false);
-    const [appointments, setAppointments] = useState<Appointment[]>([]);
-    const [xrays, setXrays] = useState<Xray[]>([]);
     const [selectedXray, setSelectedXray] = useState<Xray | null>(null);
     const [isXrayModalOpen, setIsXrayModalOpen] = useState(false);
 
-    useEffect(() => {
-        const loadInitialData = async () => {
-            try {
-                const data = await fetchPatients();
-                setPatients(data);
-                setFilteredPatients(data);
-            } catch (error) {
-                console.error('Error fetching patients:', error);
-            }
-        };
-        void loadInitialData();
-    }, []);
+    // Fetch patient-specific data when a patient is selected
+    const { 
+        data: xrays = [], 
+        isLoading: isLoadingXrays 
+    } = usePatientXrays(selectedPatient?.id || 0, {
+        enabled: !!selectedPatient && isModalOpen
+    });
+    
+    const { 
+        data: appointments = [], 
+        isLoading: isLoadingAppointments 
+    } = usePatientAppointments(selectedPatient?.id || 0, {
+        enabled: !!selectedPatient && isModalOpen
+    });
 
+    // Mutations
+    const updatePatientMutation = useUpdatePatient();
+    const deletePatientMutation = useDeletePatient();
+    const createAppointmentMutation = useCreateAppointment();
+
+    // Update filtered patients when patients or search term changes
     useEffect(() => {
-        if (searchTerm) {
-            setFilteredPatients(
-                patients.filter(patient =>
-                    `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
-                )
-            );
-        } else {
-            setFilteredPatients(patients);
+        if (patients) {
+            if (searchTerm) {
+                setFilteredPatients(
+                    patients.filter(patient =>
+                        `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                );
+            } else {
+                setFilteredPatients(patients);
+            }
         }
     }, [searchTerm, patients]);
-
-    useEffect(() => {
-        if (selectedPatient) {
-            const loadPatientData = async () => {
-                setIsLoadingXrays(true);
-                setIsLoadingAppointments(true);
-                try {
-                    const [xrayData, appointmentData] = await Promise.all([
-                        fetchPatientXrays(selectedPatient.id),
-                        fetchPatientAppointments(selectedPatient.id)
-                    ]);
-                    setXrays(xrayData.filter((xray: Xray) => xray.patient.id === selectedPatient.id));
-                    setAppointments(appointmentData.filter((appointment: Appointment) => 
-                        appointment.patientId === selectedPatient.id
-                    ));
-                } catch (error) {
-                    console.error('Error loading patient data:', error);
-                    setXrays([]);
-                    setAppointments([]);
-                } finally {
-                    setIsLoadingXrays(false);
-                    setIsLoadingAppointments(false);
-                }
-            };
-            void loadPatientData();
-        }
-    }, [selectedPatient]);
 
     const handlePatientClick = (patient: Patient): void => {
         setIsPatientModalLoading(true);
@@ -126,29 +82,11 @@ const PatientList: React.FC = () => {
 
     const handleUpdatePatient = async (updatedPatient: Patient): Promise<void> => {
         try {
-            const response = await fetch(`/api/patients/${updatedPatient.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(updatedPatient),
+            await updatePatientMutation.mutateAsync({ 
+                id: updatedPatient.id, 
+                data: updatedPatient 
             });
-
-            if (!response.ok) {
-                throw new Error('Failed to update patient');
-            }
-
-            const result = await response.json();
-            console.log('Patient updated:', result);
-
-            setPatients(prevPatients =>
-                prevPatients.map(p => p.id === updatedPatient.id ? updatedPatient : p)
-            );
-            setFilteredPatients(prevPatients =>
-                prevPatients.map(p => p.id === updatedPatient.id ? updatedPatient : p)
-            );
             setSelectedPatient(updatedPatient);
-
         } catch (error) {
             console.error('Error updating patient:', error);
         }
@@ -158,18 +96,7 @@ const PatientList: React.FC = () => {
         if (!selectedPatient) return;
 
         try {
-            const response = await fetch(`/api/patients/${selectedPatient.id}/delete`, {
-                method: 'DELETE',
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to delete patient');
-            }
-
-            const result = await response.json();
-            console.log('Patient deleted:', result);
-
-            await fetchPatients();
+            await deletePatientMutation.mutateAsync(selectedPatient.id);
             setIsModalOpen(false);
         } catch (error) {
             console.error('Error deleting patient:', error);
@@ -180,25 +107,12 @@ const PatientList: React.FC = () => {
         if (!selectedPatient) return;
 
         try {
-            const response = await fetch('/api/events/create', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ ...appointment, patientId: selectedPatient.id }),
+            await createAppointmentMutation.mutateAsync({ 
+                ...appointment, 
+                patientId: selectedPatient.id 
             });
-
-            if (!response.ok) {
-                throw new Error('Failed to create appointment');
-            }
-
-            const result = await response.json();
-            console.log('Appointment created:', result);
-
-            setAppointments(prevAppointments => [...prevAppointments, result]);
-
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error creating appointment:', error);
         }
     };
 
@@ -207,6 +121,23 @@ const PatientList: React.FC = () => {
         setSelectedXray(xray);
         setIsXrayModalOpen(true);
     };
+
+    if (isLoadingPatients) {
+        return (
+            <div className="p-6 min-h-screen">
+                <div className="flex flex-col md:flex-row md:items-center mb-6">
+                    <h1 className="text-2xl font-bold mb-4 md:mb-0 md:mr-6">Hasta Yönetimi</h1>
+                    <div className="h-10 w-24 bg-gray-200 rounded-lg animate-pulse" />
+                </div>
+                <div className="h-12 bg-gray-200 rounded-lg animate-pulse mb-4" />
+                <div className="space-y-4">
+                    {[1, 2, 3, 4, 5].map(i => (
+                        <div key={i} className="h-16 bg-gray-200 rounded-lg animate-pulse" />
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="p-6 min-h-screen">
@@ -262,12 +193,12 @@ const PatientList: React.FC = () => {
                 </div>
             )}
 
-            {isModalOpen && (
+            {isModalOpen && selectedPatient && (
                 <PatientModal
                     isOpen={isModalOpen}
                     onClose={() => {
                         setIsModalOpen(false);
-                        setIsPatientModalLoading(false);
+                        setSelectedPatient(null);
                     }}
                     patient={selectedPatient}
                     onUpdate={handleUpdatePatient}
@@ -284,19 +215,22 @@ const PatientList: React.FC = () => {
 
             {isXrayModalLoading && isXrayModalOpen && (
                 <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg shadow-lg animate-pulse overflow-y-auto scrollbar-hide">
+                    <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md animate-pulse overflow-y-auto scrollbar-hide">
                         <div className="h-8 bg-gray-200 rounded mb-4" />
-                        <div className="h-96 w-96 bg-gray-200 rounded" />
+                        <div className="h-[400px] bg-gray-200 rounded mb-4" />
+                        <div className="flex justify-between">
+                            <div className="h-10 bg-gray-200 rounded w-24" />
+                        </div>
                     </div>
                 </div>
             )}
 
-            {isXrayModalOpen && (
+            {isXrayModalOpen && selectedXray && (
                 <FullScreenXrayModal
                     isOpen={isXrayModalOpen}
                     onClose={() => {
                         setIsXrayModalOpen(false);
-                        setIsXrayModalLoading(false);
+                        setSelectedXray(null);
                     }}
                     xray={selectedXray}
                     onLoaded={() => setIsXrayModalLoading(false)}

@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { useToast } from "@/components/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import type { PatientFormData } from '@/components/Forms/PatientForm';
+import { useCreatePatient } from '@/hooks/use-query-hooks';
 
 // Dinamik import
 const PatientForm = dynamic(() => import('@/components/Forms/PatientForm'), {
@@ -36,23 +37,18 @@ const FormSkeleton = () => (
 const AddPatient: React.FC = () => {
     const router = useRouter();
     const { toast } = useToast();
-    const [isLoading, setIsLoading] = useState(false);
+    const createPatientMutation = useCreatePatient();
 
     const handleSubmit = async (formData: PatientFormData) => {
-        setIsLoading(true);
         try {
-            const response = await fetch('/api/patients', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
-
-            if (!response.ok) {
-                throw new Error('Hasta eklenirken bir hata oluştu');
-            }
-
+            // dateOfBirth'i string'e dönüştür
+            const patientData = {
+                ...formData,
+                dateOfBirth: formData.dateOfBirth ? formData.dateOfBirth.toISOString().split('T')[0] : ''
+            };
+            
+            await createPatientMutation.mutateAsync(patientData);
+            
             toast({
                 title: "Başarılı!",
                 description: "Hasta başarıyla eklendi.",
@@ -67,8 +63,6 @@ const AddPatient: React.FC = () => {
                 description: "Hasta eklenirken bir sorun oluştu.",
                 variant: "destructive",
             });
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -79,8 +73,8 @@ const AddPatient: React.FC = () => {
                     <h1 className="text-2xl font-bold mb-4">Yeni Hasta Ekle</h1>
                     <PatientForm
                         onSubmit={handleSubmit}
-                        submitButtonText={isLoading ? "Ekleniyor..." : "Hasta Ekle"}
-                        isLoading={isLoading}
+                        submitButtonText={createPatientMutation.isPending ? "Ekleniyor..." : "Hasta Ekle"}
+                        isLoading={createPatientMutation.isPending}
                     />
                 </div>
             </Suspense>

@@ -54,11 +54,12 @@ interface EventModalProps {
             };
         };
     } | null;
-    onEventUpdate: (updatedEvent: any) => void;
+    patients?: Patient[];
+    onUpdate: (updatedEvent: any) => void;
     onLoaded?: () => void;
 }
 
-const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEventUpdate, onLoaded }) => {
+const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patients: propPatients, onUpdate, onLoaded }) => {
     const [formData, setFormData] = useState({
         id: undefined as number | undefined,
         title: '',
@@ -77,12 +78,16 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
 
     useEffect(() => {
         if (isOpen) {
-            fetchPatients();
+            if (propPatients) {
+                setPatients(propPatients);
+            } else {
+                fetchPatients();
+            }
             if (onLoaded) {
                 onLoaded();
             }
         }
-    }, [isOpen, onLoaded]);
+    }, [isOpen, onLoaded, propPatients]);
 
     useEffect(() => {
         if (isOpen && patients.length > 0) {
@@ -249,33 +254,37 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onEvent
             if (!response.ok) throw new Error('Failed to save event');
 
             const savedEvent = await response.json();
-            onEventUpdate(savedEvent);
+            onUpdate(savedEvent);
             onClose();
         } catch (error) {
             console.error('Error saving event:', error);
-            setError('Randevu kaydedilirken bir hata oluştu');
+            setError('Etkinlik kaydedilemedi');
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleDelete = async () => {
-        if (!formData.id) return;
-        setError(null);
+        if (!formData.id) {
+            onClose();
+            return;
+        }
+
         setIsLoading(true);
+        setError(null);
 
         try {
-            const response = await fetch(`/api/events/${formData.id}/delete`, {
+            const response = await fetch(`/api/events/${formData.id}`, {
                 method: 'DELETE',
             });
 
             if (!response.ok) throw new Error('Failed to delete event');
 
-            onEventUpdate({ id: formData.id, deleted: true });
+            onUpdate({ id: formData.id, deleted: true });
             onClose();
         } catch (error) {
             console.error('Error deleting event:', error);
-            setError('Failed to delete event. Please try again.');
+            setError('Etkinlik silinemedi');
         } finally {
             setIsLoading(false);
         }

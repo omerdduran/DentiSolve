@@ -1,32 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import React, { useState, useMemo, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from "@/components/ui/button"
-import { Patient, Xray } from "@/shared/types";
+import { Xray } from "@/shared/types";
+import { useXrays, usePatients, useUpdateOrCreateXray, useDeleteXray } from '@/hooks/use-query-hooks';
 
 // Dinamik import
 const XrayModal = dynamic(() => import("@/components/Modals/XrayModal"), {
     loading: () => null,
     ssr: false
 });
-
-// Optimize edilmiş veri yükleme fonksiyonları
-const fetchXraysData = async () => {
-    const response = await fetch('/api/xrays', {
-        next: { revalidate: 30 } // 30 saniyelik cache
-    });
-    if (!response.ok) throw new Error('Failed to fetch X-rays');
-    return response.json();
-};
-
-const fetchPatientsData = async () => {
-    const response = await fetch('/api/patients', {
-        next: { revalidate: 30 }
-    });
-    if (!response.ok) throw new Error('Failed to fetch patients');
-    return response.json();
-};
 
 // Loading Skeleton Component
 const XrayListSkeleton = () => (
@@ -42,109 +26,58 @@ const XrayListSkeleton = () => (
 );
 
 export default function XrayManagement() {
-    const [xrays, setXrays] = useState<Xray[]>([]);
-    const [patients, setPatients] = useState<Patient[]>([]);
+    const { data: xrays = [], isLoading: isLoadingXrays, error: xraysError } = useXrays();
+    const { data: patients = [], isLoading: isLoadingPatients } = usePatients();
+    const updateOrCreateXrayMutation = useUpdateOrCreateXray();
+    const deleteXrayMutation = useDeleteXray();
+    
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedXray, setSelectedXray] = useState<Xray | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [isModalLoading, setIsModalLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
 
-    const fetchXrays = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const data = await fetchXraysData();
-            setXrays(data);
-        } catch (error) {
-            console.error('Error fetching X-rays:', error);
-            setError('Failed to load X-rays. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    const fetchPatients = useCallback(async () => {
-        try {
-            const data = await fetchPatientsData();
-            setPatients(data);
-        } catch (error) {
-            console.error('Error fetching patients:', error);
-            setError('Failed to load patients. Some features may be limited.');
-        }
-    }, []);
-
-    useEffect(() => {
-        const loadInitialData = async () => {
-            try {
-                const [xrayData, patientData] = await Promise.all([
-                    fetchXraysData(),
-                    fetchPatientsData()
-                ]);
-                setXrays(xrayData);
-                setPatients(patientData);
-            } catch (error) {
-                console.error('Error loading initial data:', error);
-                setError('Failed to load data. Please try again.');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        void loadInitialData();
-    }, []);
-
-    const handleAddXray = useCallback(() => {
+    const handleAddXray = () => {
         setIsModalLoading(true);
         setSelectedXray(null);
         setIsModalOpen(true);
-    }, []);
+    };
 
-    const handleEditXray = useCallback((xray: Xray) => {
+    const handleEditXray = (xray: Xray) => {
         setIsModalLoading(true);
         setSelectedXray(xray);
         setIsModalOpen(true);
-    }, []);
+    };
 
-    const handleCloseModal = useCallback(() => {
+    const handleCloseModal = () => {
         setIsModalOpen(false);
         setSelectedXray(null);
         setIsModalLoading(false);
-    }, []);
+    };
 
-    const handleUpdate = useCallback(async (id: number | null, data: Partial<Xray>) => {
+    const handleUpdate = async (id: number | null, data: Partial<Xray>) => {
         try {
-            const url = id ? `/api/xrays/${id}` : '/api/xrays';
-            const method = id ? 'PUT' : 'POST';
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            });
-            if (!response.ok) throw new Error(`Failed to ${id ? 'update' : 'add'} X-ray`);
-            await fetchXrays();
+            await updateOrCreateXrayMutation.mutateAsync({ id, data });
             handleCloseModal();
         } catch (error) {
             console.error(`Error ${id ? 'updating' : 'adding'} X-ray:`, error);
-            setError(`Failed to ${id ? 'update' : 'add'} X-ray. Please try again.`);
         }
-    }, [fetchXrays, handleCloseModal]);
+    };
 
-    const handleDelete = useCallback(async (id: number) => {
+    const handleDelete = async (id: number) => {
         try {
-            const response = await fetch(`/api/xrays/${id}`, {
-                method: 'DELETE',
+            // Silinen röntgenin hasta ID'sini bulalım
+            const xrayToDelete = xrays.find(x => x.id === id);
+            const patientId = xrayToDelete?.patient?.id;
+            
+            await deleteXrayMutation.mutateAsync({ 
+                id, 
+                patientId 
             });
-            if (!response.ok) throw new Error('Failed to delete X-ray');
-            await fetchXrays();
             handleCloseModal();
         } catch (error) {
             console.error('Error deleting X-ray:', error);
-            setError('Failed to delete X-ray. Please try again.');
         }
-    }, [fetchXrays, handleCloseModal]);
+    };
 
     const filteredXrays = useMemo(() => {
         return xrays.filter(xray =>
@@ -165,7 +98,10 @@ export default function XrayManagement() {
                 <p>Tarih: {new Date(xray.datePerformed).toLocaleDateString()}</p>
             </div>
         ));
-    }, [filteredXrays, handleEditXray]);
+    }, [filteredXrays]);
+
+    const isLoading = isLoadingXrays || isLoadingPatients;
+    const error = xraysError ? String(xraysError) : null;
 
     if (isLoading) {
         return (

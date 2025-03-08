@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Patient } from "@/shared/types";
 import { Check, ChevronsUpDown, CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -21,9 +21,13 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import {PRESET_COLORS} from "@/shared/utils";
+import { usePatients, useCreateAppointment } from '@/hooks/use-query-hooks';
 
+interface EventFormProps {
+    onEventAdded?: () => void;
+}
 
-const EventForm: React.FC = () => {
+const EventForm: React.FC<EventFormProps> = ({ onEventAdded }) => {
     const [formData, setFormData] = useState({
         title: '',
         start: '',
@@ -31,33 +35,15 @@ const EventForm: React.FC = () => {
         color: PRESET_COLORS[0].value,
         patientId: 0,
     });
-    const [patients, setPatients] = useState<Patient[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const { data: patients = [], isLoading: patientsLoading } = usePatients();
+    const createAppointmentMutation = useCreateAppointment();
+    
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-
-    useEffect(() => {
-        fetchPatients();
-    }, []);
-
-    const fetchPatients = async () => {
-        setIsLoading(true);
-        try {
-            const response = await fetch('/api/patients');
-            if (!response.ok) throw new Error('Hastalar getirilemedi');
-            const data = await response.json();
-            setPatients(data);
-        } catch (error) {
-            console.error('Hata:', error);
-            setError('Hastalar yüklenemedi. Lütfen sayfayı yenileyip tekrar deneyin.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -67,17 +53,14 @@ const EventForm: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
-        setIsLoading(true);
 
         if (!selectedPatient) {
             setError('Lütfen bir hasta seçin');
-            setIsLoading(false);
             return;
         }
 
         if (!startDate || !endDate) {
             setError('Lütfen başlangıç ve bitiş tarihlerini seçin');
-            setIsLoading(false);
             return;
         }
 
@@ -88,26 +71,16 @@ const EventForm: React.FC = () => {
 
         if (end <= start) {
             setError('Bitiş tarihi başlangıç tarihinden sonra olmalıdır');
-            setIsLoading(false);
             return;
         }
 
         try {
-            const response = await fetch('/api/events/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...formData,
-                    start: start.toISOString(),
-                    end: end.toISOString(),
-                    patientId: selectedPatient.id
-                }),
+            await createAppointmentMutation.mutateAsync({
+                title: formData.title,
+                date: start.toISOString(),
+                patientId: selectedPatient.id
             });
-
-            if (!response.ok) throw new Error('Etkinlik oluşturulamadı');
-
-            const savedEvent = await response.json();
-            console.log('Etkinlik oluşturuldu:', savedEvent);
+            
             setSuccess('Etkinlik başarıyla takvime eklendi');
 
             // Formu sıfırla
@@ -122,17 +95,24 @@ const EventForm: React.FC = () => {
             setEndDate(undefined);
             setSelectedPatient(null);
 
-            // 3 saniye sonra başarı mesajını temizle
-            setTimeout(() => setSuccess(null), 3000);
+            console.log("Etkinlik eklendi, callback çağrılıyor...");
+            
+            // Etkinlik eklendiğinde callback'i çağır
+            if (onEventAdded) {
+                setTimeout(() => {
+                    onEventAdded();
+                }, 100);
+            } else {
+                // 3 saniye sonra başarı mesajını temizle
+                setTimeout(() => setSuccess(null), 3000);
+            }
         } catch (error) {
             console.error('Hata:', error);
             setError('Etkinlik oluşturulamadı. Lütfen tekrar deneyin.');
-        } finally {
-            setIsLoading(false);
         }
     };
 
-    if (isLoading) return <p className="text-center py-4">Yükleniyor...</p>;
+    if (patientsLoading) return <p className="text-center py-4">Yükleniyor...</p>;
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6 p-6 bg-white rounded-lg shadow-md max-w-2xl mx-auto">
@@ -257,8 +237,8 @@ const EventForm: React.FC = () => {
                         <PopoverContent className="w-full p-0">
                             <Command>
                                 <CommandInput placeholder="Hasta ara..." />
+                                <CommandEmpty>Hasta bulunamadı.</CommandEmpty>
                                 <CommandList>
-                                    <CommandEmpty>Hasta bulunamadı.</CommandEmpty>
                                     <CommandGroup>
                                         {patients.map((patient) => (
                                             <CommandItem
@@ -272,10 +252,12 @@ const EventForm: React.FC = () => {
                                                 <Check
                                                     className={cn(
                                                         "mr-2 h-4 w-4",
-                                                        selectedPatient?.id === patient.id ? "opacity-100" : "opacity-0"
+                                                        selectedPatient?.id === patient.id
+                                                            ? "opacity-100"
+                                                            : "opacity-0"
                                                     )}
                                                 />
-                                                {`${patient.firstName} ${patient.lastName}`}
+                                                {patient.firstName} {patient.lastName}
                                             </CommandItem>
                                         ))}
                                     </CommandGroup>
@@ -286,31 +268,30 @@ const EventForm: React.FC = () => {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium mb-1">Belirti Rengi</label>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                        {PRESET_COLORS.map((preset) => (
-                            <button
-                                key={preset.value}
-                                type="button"
-                                onClick={() => setFormData(prev => ({ ...prev, color: preset.value }))}
-                                className={`w-8 h-8 rounded-full focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                                    formData.color === preset.value ? 'ring-2 ring-offset-2 ring-blue-500' : ''
-                                }`}
-                                style={{ backgroundColor: preset.value }}
-                                title={preset.name}
-                            />
+                    <label className="block text-sm font-medium mb-1" htmlFor="color">Renk</label>
+                    <select
+                        id="color"
+                        name="color"
+                        value={formData.color}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border rounded-md"
+                    >
+                        {PRESET_COLORS.map((color) => (
+                            <option key={color.value} value={color.value}>
+                                {color.name}
+                            </option>
                         ))}
-                    </div>
+                    </select>
                 </div>
             </div>
 
-            <button
-                type="submit"
-                disabled={isLoading}
-                className={`w-full px-4 py-2 text-white ${isLoading ? 'bg-gray-400' : 'bg-blue-600'} rounded-md hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+            <Button 
+                type="submit" 
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                disabled={createAppointmentMutation.isPending}
             >
-                {isLoading ? 'Yükleniyor...' : 'Takvime Ekle'}
-            </button>
+                {createAppointmentMutation.isPending ? "Oluşturuluyor..." : "Randevu Oluştur"}
+            </Button>
         </form>
     );
 };

@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Plus, X } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { QUERY_KEYS } from '@/hooks/use-query-hooks';
 
 // Dinamik importlar
 const DefaultCalendar = dynamic(() => import("@/components/CalendarViews/DefaultCalendar"), {
@@ -31,9 +33,29 @@ const EventForm = dynamic(() => import("@/components/EventForm"), {
 
 export default function CalendarPage() {
     const [showEventForm, setShowEventForm] = useState(false);
+    const queryClient = useQueryClient();
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    // Sayfa yüklendiğinde verileri yenile
+    useEffect(() => {
+        // Sadece events sorgusunu geçersiz kıl
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENTS] });
+    }, [queryClient, refreshKey]);
 
     const toggleEventForm = () => {
         setShowEventForm(!showEventForm);
+    };
+
+    const handleEventAdded = () => {
+        // Etkinlik eklendiğinde takvimi yenile
+        setShowEventForm(false);
+        
+        // Takvimi zorla yenile
+        setRefreshKey(prev => prev + 1);
+        
+        // Events sorgusunu geçersiz kıl ve yeniden getir
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENTS] });
+        queryClient.refetchQueries({ queryKey: [QUERY_KEYS.EVENTS] });
     };
 
     return (
@@ -49,7 +71,7 @@ export default function CalendarPage() {
                         </div>
                     </div>
                 }>
-                    <DefaultCalendar />
+                    <DefaultCalendar key={refreshKey} />
                 </Suspense>
             </div>
             
@@ -78,7 +100,7 @@ export default function CalendarPage() {
                                 <div className="h-10 bg-gray-200 rounded w-1/2" />
                             </div>
                         }>
-                            <EventForm />
+                            <EventForm onEventAdded={handleEventAdded} />
                         </Suspense>
                     </div>
                 </div>

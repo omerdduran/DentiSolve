@@ -1,5 +1,5 @@
 'use client';
-export const dynamic = 'force-dynamic'
+// export const dynamic = 'force-dynamic' // Removed to allow caching
 
 
 import { Inter, Roboto } from "next/font/google";
@@ -14,6 +14,8 @@ import { Footer } from "@/components/admin-panel/footer";
 import { useStore } from "@/hooks/use-store";
 import { useSidebar } from "@/hooks/use-sidebar";
 import BottomNav from "@/components/Navigation/BottomNav";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 const inter = Inter({
     subsets: ['latin'],
@@ -78,6 +80,20 @@ function MainContent({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout({children}: { children: React.ReactNode }) {
+    // Create a client
+    const [queryClient] = useState(() => new QueryClient({
+        defaultOptions: {
+            queries: {
+                staleTime: 0, // Verileri her zaman bayat olarak işaretle
+                gcTime: 5 * 60 * 1000, // 5 dakika önbelleğe al
+                refetchOnMount: true, // Bileşen mount olduğunda yeniden getir
+                refetchOnWindowFocus: true, // Pencere odaklandığında yeniden getir
+                refetchOnReconnect: true, // Yeniden bağlandığında yeniden getir
+                retry: 1
+            },
+        },
+    }));
+
     return (
         <html lang="en" className={`${inter.variable} ${roboto.variable}`}>
         <head>
@@ -86,10 +102,13 @@ export default function RootLayout({children}: { children: React.ReactNode }) {
             <meta name="viewport" content="width=device-width, initial-scale=1" />
         </head>
         <body className={`${inter.className} antialiased`}>
-        <AuthProvider>
-            <MainContent>{children}</MainContent>
-            <Toaster />
-        </AuthProvider>
+        <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+                <MainContent>{children}</MainContent>
+                <Toaster />
+            </AuthProvider>
+            {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
+        </QueryClientProvider>
         </body>
         </html>
     );

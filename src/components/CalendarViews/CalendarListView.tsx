@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import listPlugin from '@fullcalendar/list';
 import { EventClickArg, EventInput, CalendarOptions } from '@fullcalendar/core';
-import {Patient} from "@/shared/types";
+import { Patient } from "@/shared/types";
+import { useEvents, usePatients } from '@/hooks/use-query-hooks';
 
 interface ModalProps {
     isOpen: boolean;
@@ -27,49 +28,27 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, content }) => {
 };
 
 const SimpleCalendarListView: React.FC = () => {
-    const [events, setEvents] = useState<EventInput[]>([]);
-    const [patients, setPatients] = useState<{ [key: number]: Patient }>({});
+    const { data: eventsData = [], isLoading: eventsLoading, error: eventsError } = useEvents();
+    const { data: patientsData = [], isLoading: patientsLoading } = usePatients();
+    
     const [modalOpen, setModalOpen] = useState(false);
     const [modalContent, setModalContent] = useState({ title: '', content: '' });
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                await Promise.all([fetchEvents(), fetchPatients()]);
-            } catch (err) {
-                setError('Veri yüklenemedi. Lütfen daha sonra tekrar deneyin.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-    }, []);
-
-    const fetchEvents = async () => {
-        const response = await fetch('/api/events');
-        if (!response.ok) throw new Error('Randevular alınamadı');
-        const data = await response.json();
-        setEvents(data.map((event: any) => ({
-            ...event,
-            extendedProps: { patientId: event.patientId }
-        })));
-    };
-
-    const fetchPatients = async () => {
-        const response = await fetch('/api/patients');
-        if (!response.ok) throw new Error('Hastalar getirilemedi');
-        const data: Patient[] = await response.json();
-        const patientMap = data.reduce((acc, patient) => {
+    // Convert patients array to a map for easier lookup
+    const patients = React.useMemo(() => {
+        return patientsData.reduce((acc, patient) => {
             acc[patient.id] = patient;
             return acc;
         }, {} as { [key: number]: Patient });
-        setPatients(patientMap);
-    };
+    }, [patientsData]);
+
+    // Format events for the calendar
+    const events = React.useMemo(() => {
+        return eventsData.map((event: any) => ({
+            ...event,
+            extendedProps: { patientId: event.patientId }
+        }));
+    }, [eventsData]);
 
     const handleEventClick = (clickInfo: EventClickArg) => {
         const event = clickInfo.event;
@@ -108,6 +87,9 @@ const SimpleCalendarListView: React.FC = () => {
         },
         locale: 'tr'
     };
+
+    const loading = eventsLoading || patientsLoading;
+    const error = eventsError ? String(eventsError) : null;
 
     if (loading) return <div className="flex justify-center items-center h-64">Yükleniyor...</div>;
     if (error) return <div className="text-red-500 text-center p-4">Hata: {error}</div>;
