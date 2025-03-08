@@ -5,7 +5,7 @@ export async function POST() {
     console.log('Logout API called');
 
     try {
-        const cookieStore = cookies();
+        const cookieStore = await cookies();
         const token = cookieStore.get('token');
         console.log('Current token cookie:', token ? 'exists' : 'does not exist');
 

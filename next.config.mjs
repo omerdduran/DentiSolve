@@ -24,6 +24,20 @@ const nextConfig = {
         minimumCacheTTL: 60,
     },
 
+    // Turbopack configuration
+    experimental: {
+        turbo: {
+            // Turbopack specific rules
+            rules: {
+                // You can add Turbopack-specific rules here
+            },
+            // Resolve aliases (similar to webpack aliases)
+            resolveAlias: {
+                // Add any aliases you need
+            },
+        },
+    },
+
     // Enable webpack analyzer in production build
     webpack: (config, { dev, isServer }) => {
         // Bundle optimization
