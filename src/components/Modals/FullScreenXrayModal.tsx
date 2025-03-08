@@ -1,23 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import ModalWrapper from './ModalWrapper';
+import { formatDate } from '@/shared/utils';
 
 interface FullScreenXrayModalProps {
     isOpen: boolean;
     onClose: () => void;
-    xRay: {
+    xray: {
         imageUrl: string;
         datePerformed: string;
         findings: string;
         impression: string;
     } | null;
-    formatDate: (date: string) => string;
+    onLoaded?: () => void;
 }
 
-const FullScreenXrayModal: React.FC<FullScreenXrayModalProps> = ({ isOpen, onClose, xRay, formatDate }) => {
+const FullScreenXrayModal: React.FC<FullScreenXrayModalProps> = ({ isOpen, onClose, xray, onLoaded }) => {
     const [imageError, setImageError] = useState(false);
     
-    if (!xRay) return null;
+    useEffect(() => {
+        if (isOpen && onLoaded) {
+            onLoaded();
+        }
+    }, [isOpen, onLoaded]);
+    
+    if (!xray) return null;
 
     return (
         <ModalWrapper isOpen={isOpen} onClose={onClose}>
@@ -34,7 +41,7 @@ const FullScreenXrayModal: React.FC<FullScreenXrayModalProps> = ({ isOpen, onClo
                 <div className="flex flex-col md:flex-row flex-1 p-4 overflow-auto">
                     <div className="md:w-3/4 relative flex-1 min-h-[60vh] md:min-h-[80vh]">
                         <Image
-                            src={imageError ? '/images/placeholder-xray.webp' : (xRay.imageUrl || '/images/placeholder-xray.webp')}
+                            src={imageError ? '/images/placeholder-xray.webp' : (xray.imageUrl || '/images/placeholder-xray.webp')}
                             alt="Full Screen X-ray"
                             fill
                             className="object-contain bg-black"
@@ -47,15 +54,15 @@ const FullScreenXrayModal: React.FC<FullScreenXrayModalProps> = ({ isOpen, onClo
                     <div className="md:w-1/4 mt-4 md:mt-0 md:ml-4 bg-white/10 p-4 rounded-lg text-white space-y-4 overflow-y-auto">
                         <div>
                             <h3 className="font-semibold text-lg mb-1">Tarih</h3>
-                            <p>{formatDate(xRay.datePerformed)}</p>
+                            <p>{formatDate(xray.datePerformed)}</p>
                         </div>
                         <div>
                             <h3 className="font-semibold text-lg mb-1">Bulgular</h3>
-                            <p className="whitespace-pre-wrap">{xRay.findings}</p>
+                            <p className="whitespace-pre-wrap">{xray.findings}</p>
                         </div>
                         <div>
                             <h3 className="font-semibold text-lg mb-1">İzlenim</h3>
-                            <p className="whitespace-pre-wrap">{xRay.impression}</p>
+                            <p className="whitespace-pre-wrap">{xray.impression}</p>
                         </div>
                     </div>
                 </div>

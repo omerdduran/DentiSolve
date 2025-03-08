@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import Image from 'next/image';
 import ModalWrapper from './ModalWrapper';
 import {Patient, Appointment, Xray, PatientFormData} from '@/shared/types';
@@ -22,7 +22,8 @@ interface PatientModalProps {
     isLoadingAppointments: boolean,
     isLoadingXrays: boolean,
     onDelete: () => void,
-    onAddAppointment?: (appointment: { title: string; date: string }) => Promise<void>
+    onAddAppointment?: (appointment: { title: string; date: string }) => Promise<void>,
+    onLoaded?: () => void
 }
 
 const PatientModal: React.FC<PatientModalProps> = ({
@@ -36,12 +37,19 @@ const PatientModal: React.FC<PatientModalProps> = ({
                                                        isLoadingAppointments,
                                                        isLoadingXrays,
                                                        onDelete,
-                                                       onAddAppointment
+                                                       onAddAppointment,
+                                                       onLoaded
                                                    }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isAppointmentsOpen, setIsAppointmentsOpen] = useState(false);
     const [isXraysOpen, setIsXraysOpen] = useState(false);
     const [imageErrors, setImageErrors] = useState<{[key: number]: boolean}>({});
+
+    useEffect(() => {
+        if (isOpen && onLoaded) {
+            onLoaded();
+        }
+    }, [isOpen, onLoaded]);
 
     if (!isOpen || !patient) return null;
 

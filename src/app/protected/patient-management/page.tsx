@@ -9,20 +9,13 @@ import { Button } from "@/components/ui/button";
 
 // Dinamik importlar
 const PatientModal = dynamic(() => import("@/components/Modals/PatientModal"), {
-    loading: () => <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div className="bg-white p-6 rounded-lg w-full max-w-2xl animate-pulse">
-            <div className="h-8 bg-gray-200 rounded mb-4" />
-            <div className="h-64 bg-gray-200 rounded" />
-        </div>
-    </div>
+    loading: () => null,
+    ssr: false
 });
 
 const FullScreenXrayModal = dynamic(() => import("@/components/Modals/FullScreenXrayModal"), {
-    loading: () => <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div className="bg-white p-6 rounded-lg animate-pulse">
-            <div className="h-96 w-96 bg-gray-200 rounded" />
-        </div>
-    </div>
+    loading: () => null,
+    ssr: false
 });
 
 // Optimize edilmiş veri yükleme fonksiyonları
@@ -64,6 +57,8 @@ const PatientList: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [isPatientModalLoading, setIsPatientModalLoading] = useState<boolean>(false);
+    const [isXrayModalLoading, setIsXrayModalLoading] = useState<boolean>(false);
     const [isLoadingXrays, setIsLoadingXrays] = useState<boolean>(false);
     const [isLoadingAppointments, setIsLoadingAppointments] = useState<boolean>(false);
     const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -124,6 +119,7 @@ const PatientList: React.FC = () => {
     }, [selectedPatient]);
 
     const handlePatientClick = (patient: Patient): void => {
+        setIsPatientModalLoading(true);
         setSelectedPatient(patient);
         setIsModalOpen(true);
     };
@@ -207,6 +203,7 @@ const PatientList: React.FC = () => {
     };
 
     const handleXrayClick = (xray: Xray): void => {
+        setIsXrayModalLoading(true);
         setSelectedXray(xray);
         setIsXrayModalOpen(true);
     };
@@ -246,30 +243,65 @@ const PatientList: React.FC = () => {
                 </ul>
             </Suspense>
 
-            <Suspense fallback={null}>
+            {isPatientModalLoading && isModalOpen && (
+                <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md animate-pulse overflow-y-auto scrollbar-hide">
+                        <div className="h-8 bg-gray-200 rounded mb-4" />
+                        <div className="space-y-4">
+                            <div className="h-10 bg-gray-200 rounded" />
+                            <div className="h-10 bg-gray-200 rounded" />
+                            <div className="h-24 bg-gray-200 rounded" />
+                            <div className="h-24 bg-gray-200 rounded" />
+                            <div className="h-40 bg-gray-200 rounded" />
+                            <div className="flex justify-between mt-4">
+                                <div className="h-10 bg-gray-200 rounded w-24" />
+                                <div className="h-10 bg-gray-200 rounded w-24" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isModalOpen && (
                 <PatientModal
                     isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
+                    onClose={() => {
+                        setIsModalOpen(false);
+                        setIsPatientModalLoading(false);
+                    }}
                     patient={selectedPatient}
+                    onUpdate={handleUpdatePatient}
+                    onDelete={handleDelete}
+                    onAddAppointment={handleAddAppointment}
                     appointments={appointments}
                     xrays={xrays}
-                    onUpdate={handleUpdatePatient}
-                    onAddAppointment={handleAddAppointment}
-                    onXrayClick={handleXrayClick}
-                    isLoadingAppointments={isLoadingAppointments}
                     isLoadingXrays={isLoadingXrays}
-                    onDelete={handleDelete}
+                    isLoadingAppointments={isLoadingAppointments}
+                    onXrayClick={handleXrayClick}
+                    onLoaded={() => setIsPatientModalLoading(false)}
                 />
-            </Suspense>
+            )}
 
-            <Suspense fallback={null}>
+            {isXrayModalLoading && isXrayModalOpen && (
+                <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg shadow-lg animate-pulse overflow-y-auto scrollbar-hide">
+                        <div className="h-8 bg-gray-200 rounded mb-4" />
+                        <div className="h-96 w-96 bg-gray-200 rounded" />
+                    </div>
+                </div>
+            )}
+
+            {isXrayModalOpen && (
                 <FullScreenXrayModal
                     isOpen={isXrayModalOpen}
-                    onClose={() => setIsXrayModalOpen(false)}
-                    xRay={selectedXray}
-                    formatDate={formatDate}
+                    onClose={() => {
+                        setIsXrayModalOpen(false);
+                        setIsXrayModalLoading(false);
+                    }}
+                    xray={selectedXray}
+                    onLoaded={() => setIsXrayModalLoading(false)}
                 />
-            </Suspense>
+            )}
         </div>
     );
 };
