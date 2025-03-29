@@ -35,12 +35,12 @@ const ModalWrapper: React.FC<ModalWrapperProps> = ({ isOpen, onClose, children }
 
     return (
         <div 
-            className="fixed inset-0 backdrop-blur-sm bg-white/30 flex justify-center items-center z-50"
+            className="fixed inset-0 backdrop-blur-sm bg-background/80 flex justify-center items-center z-50"
             onClick={handleBackdropClick}
         >
             <div 
                 ref={modalRef} 
-                className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto scrollbar-hide"
+                className="bg-card rounded-lg shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto scrollbar-hide text-card-foreground border border-border"
             >
                 {children}
             </div>

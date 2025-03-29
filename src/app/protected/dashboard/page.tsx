@@ -9,7 +9,7 @@ import { usePatients, useXrays } from '@/hooks/use-query-hooks';
 const MyCalendarListView = dynamic(
   () => import("@/components/CalendarViews/CalendarListView"),
   {
-    loading: () => <div className="h-[300px] w-full animate-pulse bg-gray-200 rounded-lg" />,
+    loading: () => <div className="h-[300px] w-full animate-pulse bg-light-background-tertiary dark:bg-dark-background-tertiary rounded-lg" />,
     ssr: false
   }
 );
@@ -19,7 +19,7 @@ const MyCalendarListView = dynamic(
 const TreatmentDistributionChart = dynamic(
   () => import("@/components/Charts/TreatmentDistributionChart").then(mod => mod.TreatmentDistributionChart),
   {
-    loading: () => <div className="h-[300px] w-full animate-pulse bg-gray-200 rounded-lg" />
+    loading: () => <div className="h-[300px] w-full animate-pulse bg-light-background-tertiary dark:bg-dark-background-tertiary rounded-lg" />
   }
 );
 */
@@ -27,7 +27,7 @@ const TreatmentDistributionChart = dynamic(
 const TabSection = dynamic(
   () => import("@/components/Dashboard/TabSection"),
   {
-    loading: () => <div className="h-[200px] w-full animate-pulse bg-gray-200 rounded-lg" />
+    loading: () => <div className="h-[200px] w-full animate-pulse bg-light-background-tertiary dark:bg-dark-background-tertiary rounded-lg" />
   }
 );
 
@@ -40,12 +40,12 @@ const Dashboard: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="p-6 min-h-screen">
+            <div className="p-6 min-h-screen bg-background">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div className="h-[300px] animate-pulse bg-gray-200 rounded-lg" />
-                    <div className="h-[300px] animate-pulse bg-gray-200 rounded-lg" />
+                    <div className="h-[300px] animate-pulse bg-light-background-tertiary dark:bg-dark-background-tertiary rounded-lg" />
+                    <div className="h-[300px] animate-pulse bg-light-background-tertiary dark:bg-dark-background-tertiary rounded-lg" />
                 </div>
-                <div className="h-[200px] animate-pulse bg-gray-200 rounded-lg" />
+                <div className="h-[200px] animate-pulse bg-light-background-tertiary dark:bg-dark-background-tertiary rounded-lg" />
             </div>
         );
     }
@@ -54,18 +54,18 @@ const Dashboard: React.FC = () => {
     const recentXrays = xrays.slice(-5).reverse();
 
     return (
-        <div className="p-6 min-h-screen">
+        <div className="p-6 min-h-screen bg-background">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <Suspense fallback={<div className="h-[300px] animate-pulse bg-gray-200 rounded-lg" />}>
+                <Suspense fallback={<div className="h-[300px] animate-pulse bg-light-background-tertiary dark:bg-dark-background-tertiary rounded-lg" />}>
                     <MyCalendarListView />
                 </Suspense>
                 {/* Güncel tedaviler grafiği şimdilik devre dışı
-                <Suspense fallback={<div className="h-[300px] animate-pulse bg-gray-200 rounded-lg" />}>
+                <Suspense fallback={<div className="h-[300px] animate-pulse bg-light-background-tertiary dark:bg-dark-background-tertiary rounded-lg" />}>
                     <TreatmentDistributionChart patients={patients} />
                 </Suspense>
                 */}
             </div>
-            <Suspense fallback={<div className="h-[200px] animate-pulse bg-gray-200 rounded-lg" />}>
+            <Suspense fallback={<div className="h-[200px] animate-pulse bg-light-background-tertiary dark:bg-dark-background-tertiary rounded-lg" />}>
                 <TabSection
                     activeTab={activeTab}
                     setActiveTab={setActiveTab}

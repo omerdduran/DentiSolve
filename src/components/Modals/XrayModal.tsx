@@ -155,13 +155,13 @@ const XrayModal: React.FC<XrayModalProps> = ({
 
     return (
         <ModalWrapper isOpen={isOpen} onClose={onClose}>
-            <h2 className="text-2xl font-bold mb-4">{xray ? 'X-ray\'i Düzenle' : 'Yeni X-ray Ekle'}</h2>
+            <h2 className="text-2xl font-bold mb-4 text-foreground">{xray ? 'X-ray\'i Düzenle' : 'Yeni X-ray Ekle'}</h2>
             <form onSubmit={(e) => {
                 e.preventDefault();
                 handleUpdate()
             }} className="space-y-4">
                 <div>
-                    <label htmlFor="patientId" className="block text-sm font-medium text-gray-700">Hasta:</label>
+                    <label htmlFor="patientId" className="block text-sm font-medium text-muted-foreground">Hasta:</label>
                     <Popover open={openPatientSelect} onOpenChange={setOpenPatientSelect}>
                         <PopoverTrigger asChild>
                             <Button
@@ -207,7 +207,7 @@ const XrayModal: React.FC<XrayModalProps> = ({
                     </Popover>
                 </div>
                 <div>
-                    <label htmlFor="datePerformed" className="block text-sm font-medium text-gray-700">Tarih:</label>
+                    <label htmlFor="datePerformed" className="block text-sm font-medium text-muted-foreground">Tarih:</label>
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button
@@ -233,38 +233,32 @@ const XrayModal: React.FC<XrayModalProps> = ({
                     </Popover>
                 </div>
                 <div>
-                    <label htmlFor="findings" className="block text-sm font-medium text-gray-700">Bulgular:</label>
+                    <label htmlFor="findings" className="block text-sm font-medium text-muted-foreground">Bulgular:</label>
                     <Textarea
                         id="findings"
-                        name="findings"
                         value={editedXray.findings || ''}
-                        onChange={handleInputChange}
-                        style={{resize: 'none'}}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:border-indigo-300 focus:ring-3 focus:ring-indigo-200 focus:ring-opacity-50"
-                        rows={3}
-                        required
+                        onChange={(e) => setEditedXray({...editedXray, findings: e.target.value})}
+                        className="w-full bg-background border-input"
                     />
-
                 </div>
                 <div>
-                    <label htmlFor="impression" className="block text-sm font-medium text-gray-700">İzlenim:</label>
+                    <label htmlFor="impression" className="block text-sm font-medium text-muted-foreground">İzlenim:</label>
                     <Textarea
                         id="impression"
-                        name="impression"
                         value={editedXray.impression || ''}
-                        onChange={handleInputChange}
-                        style={{resize: 'none'}}  // Inline style ile resize'ı engelliyoruz
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:border-indigo-300 focus:ring-3 focus:ring-indigo-200 focus:ring-opacity-50"
-                        rows={3}
-                        required
+                        onChange={(e) => setEditedXray({...editedXray, impression: e.target.value})}
+                        className="w-full bg-background border-input"
                     />
-
                 </div>
                 <div>
-                    <label htmlFor="file" className="block text-sm font-medium text-gray-700">X-ray Görüntüsü
-                        Yükleme:</label>
-                    <Input id="file" type="file" onChange={handleFileChange} className="mt-1 block w-full "
-                           accept="image/*"/>
+                    <label htmlFor="image" className="block text-sm font-medium text-muted-foreground">Röntgen Görüntüsü:</label>
+                    <Input
+                        type="file"
+                        id="image"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="w-full bg-background border-input"
+                    />
                 </div>
                 {(editedXray.imageUrl || file) && (
                     <div>

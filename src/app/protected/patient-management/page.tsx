@@ -124,15 +124,15 @@ const PatientList: React.FC = () => {
 
     if (isLoadingPatients) {
         return (
-            <div className="p-6 min-h-screen">
+            <div className="p-6 min-h-screen bg-background">
                 <div className="flex flex-col md:flex-row md:items-center mb-6">
-                    <h1 className="text-2xl font-bold mb-4 md:mb-0 md:mr-6">Hasta Yönetimi</h1>
-                    <div className="h-10 w-24 bg-gray-200 rounded-lg animate-pulse" />
+                    <h1 className="text-2xl font-bold mb-4 md:mb-0 md:mr-6 text-foreground">Hasta Yönetimi</h1>
+                    <div className="h-10 w-24 bg-muted rounded-lg animate-pulse" />
                 </div>
-                <div className="h-12 bg-gray-200 rounded-lg animate-pulse mb-4" />
+                <div className="h-12 bg-muted rounded-lg animate-pulse mb-4" />
                 <div className="space-y-4">
                     {[1, 2, 3, 4, 5].map(i => (
-                        <div key={i} className="h-16 bg-gray-200 rounded-lg animate-pulse" />
+                        <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" />
                     ))}
                 </div>
             </div>
@@ -140,9 +140,9 @@ const PatientList: React.FC = () => {
     }
 
     return (
-        <div className="p-6 min-h-screen">
+        <div className="p-6 min-h-screen bg-background">
             <div className="flex flex-col md:flex-row md:items-center mb-6">
-                <h1 className="text-2xl font-bold mb-4 md:mb-0 md:mr-6">Hasta Yönetimi</h1>
+                <h1 className="text-2xl font-bold mb-4 md:mb-0 md:mr-6 text-foreground">Hasta Yönetimi</h1>
                 <Button onClick={() => router.push('/protected/addpatient')}>Hasta Ekle</Button>
             </div>
 
@@ -152,21 +152,21 @@ const PatientList: React.FC = () => {
                     placeholder="Hasta ismi ara..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
                 />
             </div>
 
             <Suspense fallback={
                 <div className="space-y-4">
                     {[1, 2, 3, 4, 5].map(i => (
-                        <div key={i} className="h-16 bg-gray-200 rounded-lg animate-pulse" />
+                        <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" />
                     ))}
                 </div>
             }>
                 <ul className="space-y-4">
                     {filteredPatients.map(patient => (
                         <li key={patient.id}
-                            className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                            className="bg-card text-card-foreground p-4 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer border border-border"
                             onClick={() => handlePatientClick(patient)}>
                             <span className="font-semibold text-lg">{patient.firstName} {patient.lastName}</span>
                         </li>
@@ -175,18 +175,18 @@ const PatientList: React.FC = () => {
             </Suspense>
 
             {isPatientModalLoading && isModalOpen && (
-                <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md animate-pulse overflow-y-auto scrollbar-hide">
-                        <div className="h-8 bg-gray-200 rounded mb-4" />
+                <div className="fixed inset-0 backdrop-blur-sm bg-background/80 flex items-center justify-center z-50">
+                    <div className="bg-card p-6 rounded-lg shadow-lg w-full max-w-md animate-pulse overflow-y-auto scrollbar-hide">
+                        <div className="h-8 bg-muted rounded mb-4" />
                         <div className="space-y-4">
-                            <div className="h-10 bg-gray-200 rounded" />
-                            <div className="h-10 bg-gray-200 rounded" />
-                            <div className="h-24 bg-gray-200 rounded" />
-                            <div className="h-24 bg-gray-200 rounded" />
-                            <div className="h-40 bg-gray-200 rounded" />
+                            <div className="h-10 bg-muted rounded" />
+                            <div className="h-10 bg-muted rounded" />
+                            <div className="h-24 bg-muted rounded" />
+                            <div className="h-24 bg-muted rounded" />
+                            <div className="h-40 bg-muted rounded" />
                             <div className="flex justify-between mt-4">
-                                <div className="h-10 bg-gray-200 rounded w-24" />
-                                <div className="h-10 bg-gray-200 rounded w-24" />
+                                <div className="h-10 bg-muted rounded w-24" />
+                                <div className="h-10 bg-muted rounded w-24" />
                             </div>
                         </div>
                     </div>
@@ -214,12 +214,12 @@ const PatientList: React.FC = () => {
             )}
 
             {isXrayModalLoading && isXrayModalOpen && (
-                <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md animate-pulse overflow-y-auto scrollbar-hide">
-                        <div className="h-8 bg-gray-200 rounded mb-4" />
-                        <div className="h-[400px] bg-gray-200 rounded mb-4" />
+                <div className="fixed inset-0 backdrop-blur-sm bg-background/80 flex items-center justify-center z-50">
+                    <div className="bg-card p-6 rounded-lg shadow-lg w-full max-w-md animate-pulse overflow-y-auto scrollbar-hide">
+                        <div className="h-8 bg-muted rounded mb-4" />
+                        <div className="h-[400px] bg-muted rounded mb-4" />
                         <div className="flex justify-between">
-                            <div className="h-10 bg-gray-200 rounded w-24" />
+                            <div className="h-10 bg-muted rounded w-24" />
                         </div>
                     </div>
                 </div>

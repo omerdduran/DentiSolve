@@ -16,10 +16,10 @@ const XrayModal = dynamic(() => import("@/components/Modals/XrayModal"), {
 const XrayListSkeleton = () => (
     <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {[...Array(6)].map((_, i) => (
-            <div key={i} className="border p-4 rounded shadow-sm animate-pulse">
-                <div className="h-6 bg-gray-200 rounded w-3/4 mb-2" />
-                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2" />
-                <div className="h-4 bg-gray-200 rounded w-1/3" />
+            <div key={i} className="border border-border bg-card p-4 rounded-lg shadow-sm animate-pulse">
+                <div className="h-6 bg-muted rounded w-3/4 mb-2" />
+                <div className="h-4 bg-muted rounded w-1/2 mb-2" />
+                <div className="h-4 bg-muted rounded w-1/3" />
             </div>
         ))}
     </div>
@@ -91,11 +91,11 @@ export default function XrayManagement() {
         return filteredXrays.map(xray => (
             <div
                 key={xray.id}
-                className="border p-4 rounded shadow-sm cursor-pointer hover:bg-gray-50"
+                className="border border-border bg-card p-4 rounded-lg shadow-sm cursor-pointer hover:bg-accent/50 transition-colors"
                 onClick={() => handleEditXray(xray)}
             >
-                <h3 className="font-bold">{xray.patient.firstName} {xray.patient.lastName}</h3>
-                <p>Tarih: {new Date(xray.datePerformed).toLocaleDateString()}</p>
+                <h3 className="font-bold text-foreground">{xray.patient.firstName} {xray.patient.lastName}</h3>
+                <p className="text-muted-foreground">Tarih: {new Date(xray.datePerformed).toLocaleDateString()}</p>
             </div>
         ));
     }, [filteredXrays]);
@@ -117,9 +117,9 @@ export default function XrayManagement() {
     }
 
     return (
-        <div className="p-6 min-h-screen">
+        <div className="p-6 min-h-screen bg-background">
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold mb-4 md:mb-0">X-ray Yönetimi</h1>
+                <h1 className="text-2xl font-bold mb-4 md:mb-0 text-foreground">X-ray Yönetimi</h1>
                 <Button onClick={handleAddXray}>Yeni X-ray Ekle</Button>
             </div>
             <div className="mb-6">
@@ -128,29 +128,38 @@ export default function XrayManagement() {
                     placeholder="Hasta adına göre arama yapın"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground"
                 />
             </div>
-            {error && <p className="text-red-500 mb-4">{error}</p>}
+            {error && <p className="text-destructive mb-4">{error}</p>}
             <Suspense fallback={<XrayListSkeleton />}>
                 <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                    {xrayList}
+                    {filteredXrays.map(xray => (
+                        <div
+                            key={xray.id}
+                            className="border border-border bg-card p-4 rounded-lg shadow-sm cursor-pointer hover:bg-accent/50 transition-colors"
+                            onClick={() => handleEditXray(xray)}
+                        >
+                            <h3 className="font-bold text-foreground">{xray.patient.firstName} {xray.patient.lastName}</h3>
+                            <p className="text-muted-foreground">Tarih: {new Date(xray.datePerformed).toLocaleDateString()}</p>
+                        </div>
+                    ))}
                 </div>
             </Suspense>
             
             {isModalLoading && isModalOpen && (
-                <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md animate-pulse overflow-y-auto scrollbar-hide">
-                        <div className="h-8 bg-gray-200 rounded mb-4" />
+                <div className="fixed inset-0 backdrop-blur-sm bg-background/80 flex items-center justify-center z-50">
+                    <div className="bg-card p-6 rounded-lg shadow-lg w-full max-w-md animate-pulse overflow-y-auto scrollbar-hide border border-border">
+                        <div className="h-8 bg-muted rounded mb-4" />
                         <div className="space-y-4">
-                            <div className="h-10 bg-gray-200 rounded" />
-                            <div className="h-10 bg-gray-200 rounded" />
-                            <div className="h-24 bg-gray-200 rounded" />
-                            <div className="h-24 bg-gray-200 rounded" />
-                            <div className="h-40 bg-gray-200 rounded" />
+                            <div className="h-10 bg-muted rounded" />
+                            <div className="h-10 bg-muted rounded" />
+                            <div className="h-24 bg-muted rounded" />
+                            <div className="h-24 bg-muted rounded" />
+                            <div className="h-40 bg-muted rounded" />
                             <div className="flex justify-between mt-4">
-                                <div className="h-10 bg-gray-200 rounded w-24" />
-                                <div className="h-10 bg-gray-200 rounded w-24" />
+                                <div className="h-10 bg-muted rounded w-24" />
+                                <div className="h-10 bg-muted rounded w-24" />
                             </div>
                         </div>
                     </div>

@@ -16,6 +16,7 @@ import { useSidebar } from "@/hooks/use-sidebar";
 import BottomNav from "@/components/Navigation/BottomNav";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { ThemeProvider } from 'next-themes';
 
 const inter = Inter({
     subsets: ['latin'],
@@ -69,7 +70,7 @@ function MainContent({ children }: { children: React.ReactNode }) {
     // Apply different background colors based on the route
     const mainBackgroundClass = isAuthRoute 
         ? "bg-slate-900" 
-        : "bg-white";
+        : "bg-background dark:bg-[#0f172a]";
 
     return (
         <>
@@ -104,20 +105,22 @@ export default function RootLayout({children}: { children: React.ReactNode }) {
     }));
 
     return (
-        <html lang="en" className={`${inter.variable} ${roboto.variable}`}>
+        <html lang="en" className={`${inter.variable} ${roboto.variable}`} suppressHydrationWarning>
         <head>
             <title>DentiSolve</title>
             <link rel="icon" href="/favicon.ico" />
             <meta name="viewport" content="width=device-width, initial-scale=1" />
         </head>
         <body className={`${inter.className} antialiased`}>
-        <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-                <MainContent>{children}</MainContent>
-                <Toaster />
-            </AuthProvider>
-            {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
-        </QueryClientProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <QueryClientProvider client={queryClient}>
+                <AuthProvider>
+                    <MainContent>{children}</MainContent>
+                    <Toaster />
+                </AuthProvider>
+                {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
+            </QueryClientProvider>
+        </ThemeProvider>
         </body>
         </html>
     );

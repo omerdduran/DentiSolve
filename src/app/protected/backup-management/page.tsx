@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
 
 interface Backup {
     id: string;
@@ -11,13 +12,25 @@ interface Backup {
     createdAt: string;
 }
 
+// Cron ifadesini okunabilir Türkçe metne çeviren fonksiyon
+const cronToTurkishText = (cronExpression: string | null): string => {
+    if (!cronExpression) return 'Belirtilmemiş';
+    
+    // "0 0 * * *" -> "Her gün gece yarısı (00:00)"
+    if (cronExpression === '0 0 * * *') {
+        return 'Her gün gece yarısı (00:00)';
+    }
+    
+    return cronExpression;
+};
+
 // Loading Skeleton Components
 const TableSkeleton = () => (
     <div className="animate-pulse">
-        <div className="h-10 bg-gray-200 rounded mb-4" />
+        <div className="h-10 bg-muted rounded mb-4" />
         <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-12 bg-gray-200 rounded" />
+                <div key={i} className="h-12 bg-muted rounded" />
             ))}
         </div>
     </div>
@@ -26,7 +39,7 @@ const TableSkeleton = () => (
 const ButtonsSkeleton = () => (
     <div className="flex flex-wrap gap-4 mb-6 animate-pulse">
         {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-10 w-32 bg-gray-200 rounded" />
+            <div key={i} className="h-10 w-32 bg-muted rounded" />
         ))}
     </div>
 );
@@ -45,7 +58,9 @@ const fetchScheduleStatusData = async () => {
         next: { revalidate: 30 }
     });
     if (!response.ok) throw new Error('Failed to fetch schedule status');
-    return response.json();
+    const data = await response.json();
+    console.log('Schedule status data:', data); // Debug için log
+    return data;
 };
 
 export default function BackupManagementPage() {
@@ -62,8 +77,18 @@ export default function BackupManagementPage() {
                 fetchBackupsData(),
                 fetchScheduleStatusData()
             ]);
+            console.log('Refresh Data - Schedule Data:', scheduleData);
+            
+            // API'den gelen veriyi doğru formata çeviriyoruz
+            const formattedScheduleData = {
+                isScheduled: Boolean(scheduleData.isScheduled),
+                cronExpression: scheduleData.isScheduled ? '0 0 * * *' : null
+            };
+            
             setBackups(backupsData);
-            setScheduleStatus(scheduleData);
+            setScheduleStatus(formattedScheduleData);
+            
+            console.log('Formatted schedule data:', formattedScheduleData);
         } catch (err) {
             console.error('Error refreshing data:', err);
             setError('Failed to refresh data');
@@ -116,17 +141,36 @@ export default function BackupManagementPage() {
         setError(null);
         setSuccess(null);
         try {
+            console.log('Scheduling backup with cron:', cronExpression);
+
             const response = await fetch('/api/backups', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ schedule: cronExpression }),
             });
-            if (!response.ok) throw new Error('Failed to schedule backup');
-            setSuccess('Backup scheduled successfully');
-            await refreshData();
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Yedekleme zamanlaması oluşturulamadı');
+            }
+            
+            const data = await response.json();
+            console.log('Schedule backup response:', data);
+            
+            // API yanıtı farklı formatta olabilir, o yüzden doğru formata çeviriyoruz
+            const updatedStatus = {
+                isScheduled: true,
+                cronExpression: cronExpression // API'den gelen veri yerine gönderdiğimiz cron ifadesini kullanıyoruz
+            };
+            
+            setScheduleStatus(updatedStatus);
+            console.log('Updated schedule status:', updatedStatus);
+            
+            setSuccess('Günlük yedekleme başarıyla zamanlandı');
+            // refreshData'yı kaldırıyoruz çünkü state'i zaten güncelliyoruz
         } catch (err) {
-            setError('Failed to schedule backup');
-            console.error(err);
+            setError(err instanceof Error ? err.message : 'Yedekleme zamanlaması oluşturulamadı');
+            console.error('Schedule backup error:', err);
         }
     };
 
@@ -135,11 +179,11 @@ export default function BackupManagementPage() {
         setSuccess(null);
         try {
             const response = await fetch('/api/backups?id=schedule', { method: 'DELETE' });
-            if (!response.ok) throw new Error('Failed to stop scheduled backup');
-            setSuccess('Scheduled backup stopped');
+            if (!response.ok) throw new Error('Zamanlanmış yedekleme durdurulamadı');
+            setSuccess('Zamanlanmış yedekleme durduruldu');
             await refreshData();
         } catch (err) {
-            setError('Failed to stop scheduled backup');
+            setError('Zamanlanmış yedekleme durdurulamadı');
             console.error(err);
         }
     };
@@ -158,8 +202,29 @@ export default function BackupManagementPage() {
         }
     };
 
-    const downloadBackup = (fileName: string) => {
-        window.location.href = `../../../../backups`;
+    const downloadBackup = async (fileName: string) => {
+        try {
+            const response = await fetch(`/api/backups?action=download&fileName=${fileName}`, {
+                method: 'GET',
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to download backup');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            setError('Failed to download backup');
+            console.error(err);
+        }
     };
 
     const restoreBackup = async (file: File) => {
@@ -195,38 +260,38 @@ export default function BackupManagementPage() {
 
     if (loading) {
         return (
-            <div className="container mx-auto px-4 py-8">
-                <div className="h-8 w-48 bg-gray-200 rounded mb-6 animate-pulse" />
+            <div className="p-6 min-h-screen bg-background">
+                <div className="h-8 w-48 bg-muted rounded mb-6 animate-pulse" />
                 <ButtonsSkeleton />
-                <div className="h-8 w-32 bg-gray-200 rounded mb-4 animate-pulse" />
+                <div className="h-8 w-32 bg-muted rounded mb-4 animate-pulse" />
                 <TableSkeleton />
             </div>
         );
     }
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-6">Yedek Yönetimi</h1>
+        <div className="p-6 min-h-screen bg-background">
+            <h1 className="text-3xl font-bold mb-6 text-foreground">Yedek Yönetimi</h1>
 
-            {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
-            {success && <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</div>}
+            {error && <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded mb-4">{error}</div>}
+            {success && <div className="bg-emerald-500/10 border border-emerald-500 text-emerald-500 px-4 py-3 rounded mb-4">{success}</div>}
 
             <Suspense fallback={<ButtonsSkeleton />}>
                 <div className="flex flex-wrap gap-4 mb-6">
-                    <button
+                    <Button
                         onClick={createBackup}
                         disabled={loading}
-                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+                        variant="default"
                     >
                         Yedek Oluştur
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={() => scheduleBackup('0 0 * * *')}
                         disabled={scheduleStatus.isScheduled}
-                        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+                        variant="default"
                     >
                         Günlük Yedeklemeyi Başlat
-                    </button>
+                    </Button>
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -234,58 +299,78 @@ export default function BackupManagementPage() {
                         className="hidden"
                         accept=".zip"
                     />
-                    <button
+                    <Button
                         onClick={() => fileInputRef.current?.click()}
-                        className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+                        variant="default"
                     >
                         Sistemi Yedekten Geri Yükle
-                    </button>
+                    </Button>
                 </div>
             </Suspense>
 
             {scheduleStatus.isScheduled && (
-                <div className="mb-6 p-4 bg-gray-100 rounded">
-                    <p className="mb-2">Current schedule: {scheduleStatus.cronExpression}</p>
-                    <button
-                        onClick={stopScheduledBackup}
-                        className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-                    >
-                        Stop Scheduled Backup
-                    </button>
+                <div className="mb-6 p-4 bg-card rounded border border-border">
+                    <div className="space-y-2">
+                        <p className="text-foreground">
+                            <span className="font-semibold">Durum:</span>{' '}
+                            <span className="text-emerald-500">Aktif</span>
+                        </p>
+                        <p className="text-foreground">
+                            <span className="font-semibold">Yedekleme Zamanı:</span>{' '}
+                            <span className="text-primary">
+                                {scheduleStatus.cronExpression ? cronToTurkishText(scheduleStatus.cronExpression) : 'Belirtilmemiş'}
+                            </span>
+                        </p>
+                        <div className="text-xs text-muted-foreground">
+                            Cron İfadesi: {scheduleStatus.cronExpression || 'Belirtilmemiş'}
+                        </div>
+                    </div>
+                    <div className="mt-4">
+                        <Button
+                            onClick={stopScheduledBackup}
+                            variant="destructive"
+                            className="w-full sm:w-auto"
+                        >
+                            Zamanlanmış Yedeklemeyi Durdur
+                        </Button>
+                    </div>
                 </div>
             )}
 
-            <h2 className="text-2xl font-bold mb-4">Yedekler</h2>
+            <h2 className="text-2xl font-bold mb-4 text-foreground">Yedekler</h2>
             <Suspense fallback={<TableSkeleton />}>
                 <div className="overflow-x-auto">
-                    <table className="min-w-full bg-white">
-                        <thead className="bg-gray-100">
+                    <table className="min-w-full bg-card rounded-lg border border-border">
+                        <thead className="bg-muted">
                             <tr>
-                                <th className="py-2 px-4 border-b text-left">Dosya Adı</th>
-                                <th className="py-2 px-4 border-b text-left">Tarih</th>
-                                <th className="py-2 px-4 border-b text-left">Boyut</th>
-                                <th className="py-2 px-4 border-b text-left">İşlemler</th>
+                                <th className="py-2 px-4 border-b border-border text-left text-muted-foreground">Dosya Adı</th>
+                                <th className="py-2 px-4 border-b border-border text-left text-muted-foreground">Tarih</th>
+                                <th className="py-2 px-4 border-b border-border text-left text-muted-foreground">Boyut</th>
+                                <th className="py-2 px-4 border-b border-border text-left text-muted-foreground">İşlemler</th>
                             </tr>
                         </thead>
                         <tbody>
                             {backups.map((backup) => (
-                                <tr key={backup.id} className="hover:bg-gray-50">
-                                    <td className="py-2 px-4 border-b">{backup.fileName}</td>
-                                    <td className="py-2 px-4 border-b">{format(new Date(backup.createdAt), 'yyyy-MM-dd HH:mm:ss')}</td>
-                                    <td className="py-2 px-4 border-b">{(backup.size / 1024 / 1024).toFixed(2)} MB</td>
-                                    <td className="py-2 px-4 border-b">
-                                        <button
+                                <tr key={backup.id} className="hover:bg-muted/50 transition-colors">
+                                    <td className="py-2 px-4 border-b border-border text-foreground">{backup.fileName}</td>
+                                    <td className="py-2 px-4 border-b border-border text-foreground">{format(new Date(backup.createdAt), 'yyyy-MM-dd HH:mm:ss')}</td>
+                                    <td className="py-2 px-4 border-b border-border text-foreground">{(backup.size / 1024 / 1024).toFixed(2)} MB</td>
+                                    <td className="py-2 px-4 border-b border-border">
+                                        <Button
                                             onClick={() => downloadBackup(backup.fileName)}
-                                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded mr-2 text-sm"
+                                            variant="outline"
+                                            size="sm"
+                                            className="mr-2"
                                         >
                                             İndir
-                                        </button>
-                                        <button
+                                        </Button>
+                                        <Button
                                             onClick={() => deleteBackup(backup.id)}
-                                            className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm"
+                                            variant="destructive"
+                                            size="sm"
                                         >
                                             Sil
-                                        </button>
+                                        </Button>
                                     </td>
                                 </tr>
                             ))}

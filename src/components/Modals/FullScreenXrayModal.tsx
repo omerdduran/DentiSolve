@@ -28,12 +28,12 @@ const FullScreenXrayModal: React.FC<FullScreenXrayModalProps> = ({ isOpen, onClo
 
     return (
         <ModalWrapper isOpen={isOpen} onClose={onClose}>
-            <div className="fixed inset-0 bg-black/80 z-50 flex flex-col">
-                <div className="flex justify-between items-center p-4 bg-white/10">
-                    <h2 className="text-2xl font-bold text-white">Röntgen Detayları</h2>
+            <div className="fixed inset-0 bg-background/80 z-50 flex flex-col">
+                <div className="flex justify-between items-center p-4 bg-card/10">
+                    <h2 className="text-2xl font-bold text-foreground">Röntgen Detayları</h2>
                     <button
                         onClick={onClose}
-                        className="text-white hover:text-gray-300 text-2xl font-bold p-2"
+                        className="text-foreground hover:text-muted-foreground text-2xl font-bold p-2"
                     >
                         &times;
                     </button>

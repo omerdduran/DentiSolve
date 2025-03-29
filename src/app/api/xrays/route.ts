@@ -38,7 +38,13 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
     try {
+        const searchParams = request.nextUrl.searchParams;
+        const patientId = searchParams.get('patientId');
+
         const xrays = await prisma.xray.findMany({
+            where: patientId ? {
+                patientId: parseInt(patientId)
+            } : undefined,
             include: {
                 patient: {
                     select: {

@@ -4,6 +4,7 @@ import listPlugin from '@fullcalendar/list';
 import { EventClickArg, EventInput, CalendarOptions } from '@fullcalendar/core';
 import { Patient } from "@/shared/types";
 import { useEvents, usePatients } from '@/hooks/use-query-hooks';
+import { Button } from '@/components/ui/button';
 
 interface ModalProps {
     isOpen: boolean;
@@ -15,13 +16,16 @@ interface ModalProps {
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, content }) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-xs flex justify-center items-center z-50">
-            <div className="bg-white p-6 rounded-2xl shadow-lg max-w-md w-full">
-                <h2 className="text-xl font-semibold mb-4">{title}</h2>
-                <p className="mb-6">{content}</p>
-                <button onClick={onClose} className="w-full bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition duration-200">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex justify-center items-center z-50">
+            <div className="bg-card p-6 rounded-lg shadow-lg max-w-md w-full border border-border">
+                <h2 className="text-xl font-semibold mb-4 text-foreground">{title}</h2>
+                <p className="mb-6 text-card-foreground">{content}</p>
+                <Button 
+                    onClick={onClose} 
+                    className="w-full"
+                >
                     Kapat
-                </button>
+                </Button>
             </div>
         </div>
     );
@@ -91,51 +95,75 @@ const SimpleCalendarListView: React.FC = () => {
     const loading = eventsLoading || patientsLoading;
     const error = eventsError ? String(eventsError) : null;
 
-    if (loading) return <div className="flex justify-center items-center h-64">Yükleniyor...</div>;
-    if (error) return <div className="text-red-500 text-center p-4">Hata: {error}</div>;
+    if (loading) return <div className="flex justify-center items-center h-64 text-muted-foreground">Yükleniyor...</div>;
+    if (error) return <div className="text-destructive text-center p-4">Hata: {error}</div>;
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-md">
-            <h2 className="text-2xl font-semibold mb-6 text-gray-800">Yaklaşan Randevular</h2>
+        <div className="bg-card p-6 rounded-lg shadow-md border border-border">
+            <h2 className="text-2xl font-semibold mb-6 text-foreground">Yaklaşan Randevular</h2>
             <div className="w-full calendar-container">
                 <style jsx global>{`
                     .calendar-container {
                         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                     }
+                    .fc {
+                        --fc-border-color: hsl(var(--border));
+                        --fc-button-text-color: hsl(var(--foreground));
+                        --fc-button-bg-color: hsl(var(--card));
+                        --fc-button-border-color: hsl(var(--border));
+                        --fc-button-hover-bg-color: hsl(var(--accent));
+                        --fc-button-hover-border-color: hsl(var(--border));
+                        --fc-button-active-bg-color: hsl(var(--accent));
+                        --fc-button-active-border-color: hsl(var(--border));
+                        --fc-event-bg-color: hsl(var(--primary));
+                        --fc-event-border-color: hsl(var(--primary));
+                        --fc-event-text-color: hsl(var(--primary-foreground));
+                        --fc-list-event-hover-bg-color: hsl(var(--accent));
+                        --fc-today-bg-color: hsl(var(--accent));
+                    }
                     .fc .fc-list-event:hover td {
-                        background-color: #f0f0f0;
+                        background-color: hsl(var(--accent));
                     }
                     .fc .fc-list-event-dot {
-                        border-color: #007aff;
+                        border-color: hsl(var(--primary));
                     }
                     .fc .fc-list-day-cushion {
-                        background-color: #f8f8f8;
+                        background-color: hsl(var(--muted));
                     }
                     .fc .fc-list-event-time {
-                        color: #666;
+                        color: hsl(var(--muted-foreground));
                     }
                     .fc .fc-list-event-title {
                         font-weight: 500;
+                        color: hsl(var(--foreground));
                     }
                     .fc .fc-toolbar-title {
                         font-size: 1.2em;
                         font-weight: 600;
+                        color: hsl(var(--foreground));
                     }
                     .fc .fc-button {
-                        background-color: #f0f0f0;
-                        border-color: #e0e0e0;
-                        color: #333;
+                        background-color: hsl(var(--card));
+                        border-color: hsl(var(--border));
+                        color: hsl(var(--foreground));
                         font-weight: 400;
                         text-transform: capitalize;
                         border-radius: 6px;
                     }
                     .fc .fc-button:hover {
-                        background-color: #e0e0e0;
-                        border-color: #d0d0d0;
+                        background-color: hsl(var(--accent));
+                        border-color: hsl(var(--border));
                     }
                     .fc .fc-button:active,
                     .fc .fc-button:focus {
-                        box-shadow: 0 0 0 0.2rem rgba(0,122,255,.25);
+                        box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+                    }
+                    .fc .fc-list-empty {
+                        background-color: hsl(var(--card));
+                        color: hsl(var(--muted-foreground));
+                    }
+                    .fc .fc-list-table td {
+                        border-color: hsl(var(--border));
                     }
                 `}</style>
                 <FullCalendar {...calendarOptions} />

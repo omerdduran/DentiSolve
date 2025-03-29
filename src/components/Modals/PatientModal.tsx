@@ -10,6 +10,7 @@ import {
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import {ChevronDown, ChevronUp} from 'lucide-react';
+import {Button} from "@/components/ui/button";
 
 interface PatientModalProps {
     isOpen: boolean,
@@ -60,10 +61,13 @@ const PatientModal: React.FC<PatientModalProps> = ({
         setIsEditing(false);
     };
 
+    const handleImageError = (id: number) => {
+        setImageErrors(prev => ({...prev, [id]: true}));
+    };
 
     return (
         <ModalWrapper isOpen={isOpen} onClose={onClose}>
-            <h2 className="text-xl font-bold mb-4">{isEditing ? "Hasta Bilgilerini Düzenle" : "Hasta Detayları"}</h2>
+            <h2 className="text-xl font-bold mb-4 text-foreground">{isEditing ? "Hasta Bilgilerini Düzenle" : "Hasta Detayları"}</h2>
             <div className="space-y-4">
                 {isEditing ? (
                     <PatientForm
@@ -82,112 +86,126 @@ const PatientModal: React.FC<PatientModalProps> = ({
                         submitButtonText="Kaydet"
                     />
                 ) : (
-                    <div className="space-y-2 text-sm">
-                        <p><strong>İsim:</strong> {patient.firstName} {patient.lastName}</p>
-                        <p><strong>Doğum Tarihi:</strong> {formatDate(patient.dateOfBirth)}</p>
-                        <p><strong>Telefon:</strong> {patient.homePhone || 'N/A'}</p>
-                        <p><strong>Tedavi/İlaçlar:</strong> {patient.currentTreatment || 'N/A'}</p>
-                        <p><strong>Tıbbi Geçmiş:</strong> {patient.medicalHistory || 'N/A'}</p>
-                        <p><strong>Diğer Sorunlar:</strong> {patient.anyMedicalProblems || 'N/A'}</p>
-                        <p><strong>Kadın Sağlığı:</strong> {patient.womenSpecificInfo || 'N/A'}</p>
-                    </div>
-                )}
-
-                {/* Randevular bölümü */}
-                <Collapsible open={isAppointmentsOpen} onOpenChange={setIsAppointmentsOpen}
-                             className="w-full border rounded-md">
-                    <CollapsibleTrigger className="flex items-center justify-between w-full p-2 text-sm font-medium">
-                        Randevular
-                        {isAppointmentsOpen ? <ChevronUp className="h-4 w-4"/> : <ChevronDown className="h-4 w-4"/>}
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="p-2">
-                        {isLoadingAppointments ? (
-                            <p className="text-sm">Randevular yükleniyor...</p>
-                        ) : appointments.length > 0 ? (
-                            <ul className="text-sm space-y-1">
-                                {appointments.map(appointment => (
-                                    <li key={appointment.id}>
-                                        {formatDate(appointment.start)}: {appointment.title}
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p className="text-sm">Henüz randevu bulunmamaktadır.</p>
-                        )}
-                    </CollapsibleContent>
-                </Collapsible>
-
-                {/* Röntgenler bölümü */}
-                <Collapsible open={isXraysOpen} onOpenChange={setIsXraysOpen} className="w-full border rounded-md">
-                    <CollapsibleTrigger className="flex items-center justify-between w-full p-2 text-sm font-medium">
-                        Röntgenler
-                        {isXraysOpen ? <ChevronUp className="h-4 w-4"/> : <ChevronDown className="h-4 w-4"/>}
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="p-2">
-                        {isLoadingXrays ? (
-                            <p className="text-sm">Röntgenler yükleniyor...</p>
-                        ) : xrays.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {xrays.map(xray => (
-                                    <div
-                                        key={xray.id}
-                                        className="border p-2 rounded cursor-pointer hover:shadow-md transition-shadow"
-                                        onClick={() => onXrayClick(xray)}
-                                    >
-                                        <div className="relative w-full h-24 mb-1">
-                                            <Image
-                                                src={imageErrors[xray.id] ? '/images/placeholder-xray.webp' : (xray.imageUrl || '/images/placeholder-xray.webp')}
-                                                alt={`X-ray for ${patient ? `${patient.firstName} ${patient.lastName}` : 'patient'}`}
-                                                fill
-                                                className="object-contain"
-                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                                quality={90}
-                                                priority={false}
-                                                onError={() => {
-                                                    setImageErrors(prev => ({...prev, [xray.id]: true}));
-                                                }}
-                                            />
-                                        </div>
-                                        <p className="text-xs">{formatDate(xray.datePerformed)}: {xray.impression}</p>
-                                    </div>
-                                ))}
+                    <>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Ad</p>
+                                    <p className="text-foreground">{patient.firstName}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Soyad</p>
+                                    <p className="text-foreground">{patient.lastName}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Telefon</p>
+                                    <p className="text-foreground">{patient.homePhone || 'N/A'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-muted-foreground">E-posta</p>
+                                    <p className="text-foreground">{patient.email || 'N/A'}</p>
+                                </div>
                             </div>
-                        ) : (
-                            <p className="text-sm">Bu hasta için röntgen bulunmamaktadır.</p>
-                        )}
-                    </CollapsibleContent>
-                </Collapsible>
+                        </div>
+
+                        <div className="mt-6 space-y-4">
+                            <Collapsible open={isAppointmentsOpen} onOpenChange={setIsAppointmentsOpen}
+                                       className="w-full border border-border rounded-md bg-card">
+                                <CollapsibleTrigger className="flex items-center justify-between w-full p-2 text-sm font-medium text-foreground">
+                                    Randevular
+                                    {isAppointmentsOpen ? <ChevronUp className="h-4 w-4"/> : <ChevronDown className="h-4 w-4"/>}
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="p-2 text-card-foreground">
+                                    {isLoadingAppointments ? (
+                                        <p className="text-sm text-muted-foreground">Randevular yükleniyor...</p>
+                                    ) : appointments.length > 0 ? (
+                                        <ul className="text-sm space-y-1">
+                                            {appointments.map(appointment => (
+                                                <li key={appointment.id} className="text-foreground">
+                                                    {formatDate(appointment.start)}: {appointment.title}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">Henüz randevu bulunmamaktadır.</p>
+                                    )}
+                                </CollapsibleContent>
+                            </Collapsible>
+
+                            <Collapsible open={isXraysOpen} onOpenChange={setIsXraysOpen} className="w-full border border-border rounded-md bg-card">
+                                <CollapsibleTrigger className="flex items-center justify-between w-full p-2 text-sm font-medium text-foreground">
+                                    Röntgenler
+                                    {isXraysOpen ? <ChevronUp className="h-4 w-4"/> : <ChevronDown className="h-4 w-4"/>}
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="p-2 text-card-foreground">
+                                    {isLoadingXrays ? (
+                                        <p className="text-sm text-muted-foreground">Röntgenler yükleniyor...</p>
+                                    ) : xrays.length > 0 ? (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            {xrays.map(xray => (
+                                                <div
+                                                    key={xray.id}
+                                                    className="border border-border bg-card p-2 rounded-md cursor-pointer hover:bg-accent transition-colors"
+                                                    onClick={() => onXrayClick(xray)}
+                                                >
+                                                    <div className="relative aspect-square mb-2">
+                                                        {!imageErrors[xray.id] ? (
+                                                            <Image
+                                                                src={xray.imageUrl}
+                                                                alt="X-ray"
+                                                                fill
+                                                                className="object-cover rounded"
+                                                                onError={() => handleImageError(xray.id)}
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center bg-muted rounded">
+                                                                <span className="text-muted-foreground">Görüntü yüklenemedi</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-sm font-medium text-foreground">{formatDate(xray.datePerformed)}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">Henüz röntgen bulunmamaktadır.</p>
+                                    )}
+                                </CollapsibleContent>
+                            </Collapsible>
+                        </div>
+                    </>
+                )}
             </div>
             <div className="flex justify-end space-x-2 mt-4">
                 {isEditing ? (
-                    <button
+                    <Button
                         onClick={() => setIsEditing(false)}
-                        className="px-3 py-1 text-sm bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+                        variant="outline"
                     >
                         İptal
-                    </button>
+                    </Button>
                 ) : (
                     <>
-                        <button
+                        <Button
                             onClick={() => setIsEditing(true)}
-                            className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                            variant="outline"
                         >
                             Düzenle
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             onClick={onDelete}
-                            className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+                            variant="destructive"
                         >
                             Sil
-                        </button>
+                        </Button>
                     </>
                 )}
-                <button
+                <Button
                     onClick={onClose}
-                    className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
+                    variant="secondary"
                 >
                     Kapat
-                </button>
+                </Button>
             </div>
         </ModalWrapper>
     );

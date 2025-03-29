@@ -6,15 +6,16 @@ import { Plus } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/hooks/use-query-hooks';
 import EventModal from '@/components/Modals/EventModal';
+import { Button } from '@/components/ui/button';
 
 // Dinamik importlar
 const DefaultCalendar = dynamic(() => import("@/components/CalendarViews/DefaultCalendar"), {
     loading: () => (
-        <div className="w-full h-[600px] bg-white rounded-lg shadow-md p-4 animate-pulse">
-            <div className="h-12 bg-gray-200 rounded mb-4" />
+        <div className="w-full h-[600px] bg-card rounded-lg shadow-sm p-4 animate-pulse">
+            <div className="h-12 bg-muted rounded-md mb-4" />
             <div className="grid grid-cols-7 gap-2">
                 {[...Array(35)].map((_, i) => (
-                    <div key={i} className="h-24 bg-gray-200 rounded" />
+                    <div key={i} className="h-24 bg-muted rounded-md" />
                 ))}
             </div>
         </div>
@@ -50,14 +51,14 @@ export default function CalendarPage() {
     };
 
     return (
-        <main className="flex flex-col items-center p-4 md:p-8 lg:p-12 relative">
-            <div className="w-full max-w-7xl min-h-dvh">
+        <main className="flex flex-col items-center p-4 md:p-8 lg:p-12 relative min-h-screen bg-background">
+            <div className="w-full max-w-7xl">
                 <Suspense fallback={
-                    <div className="w-full h-[600px] bg-white rounded-lg shadow-md p-4 animate-pulse">
-                        <div className="h-12 bg-gray-200 rounded mb-4" />
+                    <div className="w-full h-[600px] bg-card rounded-lg shadow-sm p-4 animate-pulse">
+                        <div className="h-12 bg-muted rounded-md mb-4" />
                         <div className="grid grid-cols-7 gap-2">
                             {[...Array(35)].map((_, i) => (
-                                <div key={i} className="h-24 bg-gray-200 rounded" />
+                                <div key={i} className="h-24 bg-muted rounded-md" />
                             ))}
                         </div>
                     </div>
@@ -66,13 +67,14 @@ export default function CalendarPage() {
                 </Suspense>
             </div>
             
-            <button
+            <Button
                 onClick={toggleEventModal}
-                className="fixed bottom-20 sm:bottom-8 right-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-4 shadow-lg transition-colors duration-200 z-50"
+                size="icon"
+                className="fixed bottom-20 sm:bottom-8 right-8 rounded-full h-14 w-14"
                 aria-label="Yeni randevu ekle"
             >
-                <Plus size={28} />
-            </button>
+                <Plus className="h-6 w-6" />
+            </Button>
 
             {showEventModal && (
                 <EventModal

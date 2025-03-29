@@ -314,7 +314,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
                             name="title"
                             value={formData.title}
                             onChange={handleInputChange}
-                            className="w-full px-3 py-2 border rounded-md"
+                            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
                             required
                         />
                     </div>
@@ -458,7 +458,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
                             name="start"
                             value={formData.start}
                             onChange={handleInputChange}
-                            className="w-full px-3 py-2 border rounded-md"
+                            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
                             required
                         />
                     </div>
@@ -602,7 +602,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
                             name="end"
                             value={formData.end}
                             onChange={handleInputChange}
-                            className="w-full px-3 py-2 border rounded-md"
+                            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
                             required
                         />
                     </div>

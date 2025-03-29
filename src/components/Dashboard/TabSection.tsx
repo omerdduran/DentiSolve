@@ -1,7 +1,7 @@
 import React from 'react';
 import { Patient, Xray } from '@/shared/types';
-import {RecentPatients} from "@/components/Dashboard/Recent/RecentPatients";
-import {RecentXrays} from "@/components/Dashboard/Recent/RecentXrays";
+import { RecentPatients } from "@/components/Dashboard/Recent/RecentPatients";
+import { RecentXrays } from "@/components/Dashboard/Recent/RecentXrays";
 import TabButton from "@/components/Dashboard/TabButton";
 
 interface TabSectionProps {
@@ -12,8 +12,12 @@ interface TabSectionProps {
 }
 
 const TabSection: React.FC<TabSectionProps> = ({ activeTab, setActiveTab, recentPatients, recentXrays }) => (
-    <div className="mb-6">
-        <div className="flex mb-4">
+    <div className="space-y-4">
+        <div 
+            className="flex border-b border-border" 
+            role="tablist" 
+            aria-label="Recent items tabs"
+        >
             <TabButton
                 isActive={activeTab === 'patients'}
                 onClick={() => setActiveTab('patients')}
@@ -25,7 +29,7 @@ const TabSection: React.FC<TabSectionProps> = ({ activeTab, setActiveTab, recent
                 label="Son Röntgenler"
             />
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm">
+        <div className="bg-card text-card-foreground p-6 rounded-lg shadow-sm">
             {activeTab === 'patients' ? (
                 <RecentPatients patients={recentPatients} />
             ) : (

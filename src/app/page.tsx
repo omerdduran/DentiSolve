@@ -73,15 +73,15 @@ export default function Home() {
 
     if (isLoading) {
         return (
-            <div className="flex justify-center items-center min-h-screen bg-ilhanblue">
-                <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-white"></div>
+            <div className="flex justify-center items-center min-h-screen bg-background">
+                <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-foreground"></div>
             </div>
         );
     }
 
     console.log('Rendering login screen');
     return (
-        <div className="flex flex-col items-center min-h-screen bg-ilhanblue">
+        <div className="flex flex-col items-center min-h-screen bg-background">
             <Image
                 src="/Ilhan-Clinic.png"
                 alt="Dentisolve Logo"

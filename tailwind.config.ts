@@ -14,7 +14,40 @@ const config: Config = {
   			'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))'
   		},
   		colors: {
-  			ilhanblue: '#141824',
+  			// Ana tema renkleri
+  			light: {
+  				background: {
+  					primary: '#ffffff',
+  					secondary: '#f8fafc',
+  					tertiary: '#f1f5f9'
+  				},
+  				text: {
+  					primary: '#0f172a',
+  					secondary: '#334155',
+  					tertiary: '#64748b'
+  				},
+  				border: {
+  					DEFAULT: '#e2e8f0',
+  					secondary: '#cbd5e1'
+  				}
+  			},
+  			dark: {
+  				background: {
+  					primary: '#0f172a',
+  					secondary: '#1e293b',
+  					tertiary: '#334155'
+  				},
+  				text: {
+  					primary: '#f8fafc',
+  					secondary: '#e2e8f0',
+  					tertiary: '#cbd5e1'
+  				},
+  				border: {
+  					DEFAULT: '#334155',
+  					secondary: '#475569'
+  				}
+  			},
+  			// Shadcn için gerekli renkler
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
@@ -104,5 +137,6 @@ const config: Config = {
   	}
   },
   plugins: [require("tailwindcss-animate"), require('tailwind-scrollbar-hide')],
-};
+} satisfies Config;
+
 export default config;

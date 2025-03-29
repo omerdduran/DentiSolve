@@ -11,6 +11,7 @@ import { Patient } from "@/shared/types";
 import { PRESET_COLORS } from "@/shared/utils";
 import { useEvents, usePatients, QUERY_KEYS } from '@/hooks/use-query-hooks';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTheme } from 'next-themes';
 
 interface ExtendedEventInput extends Omit<EventInput, 'id'> {
     id?: number;
@@ -23,6 +24,8 @@ const DefaultCalendar: React.FC = () => {
     const { data: eventsData = [], isLoading: eventsLoading, error: eventsError, refetch: refetchEvents } = useEvents();
     const { data: patientsData = [], isLoading: patientsLoading } = usePatients();
     const queryClient = useQueryClient();
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<ExtendedEventInput | null>(null);
@@ -146,76 +149,108 @@ const DefaultCalendar: React.FC = () => {
     if (error) return <div>Hata: {error}</div>;
 
     return (
-        <div className="calendar-container">
+        <div className="calendar-container bg-card rounded-lg shadow-sm p-4">
             <style jsx global>{`
                 .calendar-container {
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                    font-family: var(--font-sans);
                 }
                 .fc {
-                    --fc-border-color: #e0e0e0;
-                    --fc-button-bg-color: #f0f0f0;
-                    --fc-button-border-color: #e0e0e0;
-                    --fc-button-text-color: #333;
-                    --fc-button-hover-bg-color: #e0e0e0;
-                    --fc-button-hover-border-color: #d0d0d0;
-                    --fc-button-active-bg-color: #d0d0d0;
-                    --fc-button-active-border-color: #c0c0c0;
+                    --fc-border-color: hsl(var(--border));
+                    --fc-button-bg-color: hsl(var(--muted));
+                    --fc-button-border-color: hsl(var(--border));
+                    --fc-button-text-color: hsl(var(--muted-foreground));
+                    --fc-button-hover-bg-color: hsl(var(--accent));
+                    --fc-button-hover-border-color: hsl(var(--accent));
+                    --fc-button-active-bg-color: hsl(var(--accent));
+                    --fc-button-active-border-color: hsl(var(--accent));
+                    --fc-page-bg-color: hsl(var(--card));
+                    --fc-neutral-bg-color: hsl(var(--muted));
+                    --fc-list-event-hover-bg-color: hsl(var(--accent));
+                    --fc-today-bg-color: ${isDark ? 'hsl(var(--muted))' : 'hsl(var(--accent)/0.1)'};
+                    color: hsl(var(--card-foreground));
                 }
                 .fc .fc-button {
-                    font-weight: 400;
+                    font-weight: 500;
                     text-transform: capitalize;
-                    border-radius: 6px;
+                    border-radius: var(--radius);
+                    padding: 0.5rem 1rem;
                 }
                 .fc .fc-button-primary:not(:disabled).fc-button-active,
                 .fc .fc-button-primary:not(:disabled):active {
-                    background-color: #007aff;
-                    border-color: #007aff;
-                    color: #fff;
+                    background-color: hsl(var(--primary));
+                    border-color: hsl(var(--primary));
+                    color: hsl(var(--primary-foreground));
                 }
-                .fc-theme-standard td, .fc-theme-standard th {
-                    border-color: #f0f0f0;
+                .fc-theme-standard td, 
+                .fc-theme-standard th {
+                    border-color: hsl(var(--border));
                 }
                 .fc .fc-day-other .fc-daygrid-day-top {
                     opacity: 0.5;
                 }
                 .fc .fc-daygrid-day-number {
-                    font-size: 0.9em;
-                    padding: 4px 6px;
+                    font-size: 0.875rem;
+                    padding: 0.5rem;
+                    color: hsl(var(--foreground));
                 }
                 .fc .fc-col-header-cell-cushion {
                     font-weight: 500;
+                    color: hsl(var(--foreground));
+                    padding: 0.5rem;
                 }
                 .event-content {
-                    font-size: 0.8em;
-                    line-height: 1.2;
-                    padding: 2px 4px;
+                    font-size: 0.875rem;
+                    line-height: 1.25;
+                    padding: 0.25rem 0.5rem;
                 }
                 .event-title {
                     font-weight: 500;
+                    color: hsl(var(--card));
                 }
                 .event-patient {
                     font-style: italic;
-                    opacity: 0.8;
+                    opacity: 0.9;
+                    color: hsl(var(--card));
+                }
+                .fc-day-today {
+                    background: ${isDark ? 'hsl(var(--muted))' : 'hsl(var(--accent)/0.1)'} !important;
+                }
+                .fc-highlight {
+                    background: hsl(var(--accent)/0.2) !important;
+                }
+                .fc-event {
+                    border-radius: var(--radius);
+                    border: none;
+                }
+                .fc-event-main {
+                    padding: 0.25rem;
+                }
+                .fc-toolbar-title {
+                    color: hsl(var(--foreground));
                 }
                 @media (max-width: 768px) {
                     .fc .fc-toolbar {
                         flex-direction: column;
-                        gap: 4px;
+                        gap: 1rem;
                     }
                     .fc .fc-toolbar-title {
-                        font-size: 1em;
-                        margin: 0 !important;
-                        padding: 4px 0;
+                        font-size: 1.25rem;
                     }
                 }
             `}</style>
-            <FullCalendar {...calendarOptions} />
-            {isModalOpen && (
+
+            <div className="rounded-lg overflow-hidden">
+                <FullCalendar {...calendarOptions} />
+            </div>
+
+            {isModalOpen && selectedEvent && (
                 <EventModal
                     isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
+                    onClose={() => {
+                        setIsModalOpen(false);
+                        setSelectedEvent(null);
+                    }}
                     event={selectedEvent}
-                    patients={patientsData}
                     onUpdate={handleEventUpdate}
                 />
             )}
