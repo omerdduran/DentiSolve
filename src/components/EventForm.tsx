@@ -95,13 +95,9 @@ const EventForm: React.FC<EventFormProps> = ({ onEventAdded }) => {
             setEndDate(undefined);
             setSelectedPatient(null);
 
-            console.log("Etkinlik eklendi, callback çağrılıyor...");
-            
             // Etkinlik eklendiğinde callback'i çağır
             if (onEventAdded) {
-                setTimeout(() => {
-                    onEventAdded();
-                }, 100);
+                onEventAdded();
             } else {
                 // 3 saniye sonra başarı mesajını temizle
                 setTimeout(() => setSuccess(null), 3000);

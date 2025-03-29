@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Patient } from "@/shared/types";
 import { Check, ChevronsUpDown, CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -77,7 +77,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
     // Varsayılan değerlere sıfırlama fonksiyonu
-    const resetToDefaultValues = () => {
+    const resetToDefaultValues = useCallback(() => {
         const now = new Date();
         const defaultPatient = patients[0];
         
@@ -92,8 +92,9 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
         });
         setStartDate(now);
         setEndDate(now);
-    };
+    }, [patients]);
 
+    // Modal açıldığında hastaları yükle
     useEffect(() => {
         if (isOpen) {
             if (propPatients) {
@@ -107,87 +108,80 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
         }
     }, [isOpen, onLoaded, propPatients]);
 
+    // Event verilerini form state'ine yükle
     useEffect(() => {
-        if (isOpen && patients.length > 0) {
-            if (event) {
-                try {
-                    // Güvenli bir şekilde patientId'yi al
-                    const patientId = event.patientId || 
-                                     (event.extendedProps && event.extendedProps.patientId) || 
-                                     0;
-                    
-                    // Güvenli bir şekilde start ve end tarihlerini al
-                    let start: Date;
-                    let end: Date;
-                    
-                    if (typeof event.start === 'string') {
-                        start = new Date(event.start);
-                    } else if (event.start instanceof Date) {
-                        start = event.start;
-                    } else if (event._instance && event._instance.range && event._instance.range.start) {
-                        start = new Date(event._instance.range.start);
-                    } else {
-                        start = new Date();
-                    }
-                    
-                    if (typeof event.end === 'string') {
-                        end = new Date(event.end);
-                    } else if (event.end instanceof Date) {
-                        end = event.end;
-                    } else if (event._instance && event._instance.range && event._instance.range.end) {
-                        end = new Date(event._instance.range.end);
-                    } else {
-                        // End tarihi yoksa start tarihinden 1 saat sonrasını kullan
-                        end = new Date(start);
-                        end.setHours(end.getHours() + 1);
-                    }
-                    
-                    // Hasta seçimini yap
-                    const eventPatient = patients.find(p => p.id === patientId);
-                    setSelectedPatient(eventPatient || null);
-                    
-                    // Form verilerini güncelle
-                    let eventId: number | undefined;
-                    if (event.id) {
-                        eventId = event.id;
-                    } else if (event.publicId && typeof event.publicId === 'string') {
-                        eventId = parseInt(event.publicId);
-                    } else if (event._def && event._def.publicId) {
-                        eventId = parseInt(event._def.publicId);
-                    }
-                    
-                    const eventTitle = event.title || 
-                                      (event._def && event._def.title) || 
-                                      '';
-                    
-                    const eventColor = event.color || 
-                                      event.backgroundColor || 
-                                      (event._def && event._def.ui && event._def.ui.backgroundColor) || 
-                                      PRESET_COLORS[0].value;
-                    
-                    setFormData({
-                        id: eventId,
-                        title: eventTitle,
-                        start: formatTime(start),
-                        end: formatTime(end),
-                        color: eventColor,
-                        patientId: patientId
-                    });
-                    
-                    setStartDate(start);
-                    setEndDate(end);
-                } catch (error) {
-                    console.error('Event verisi işlenirken hata oluştu:', error);
-                    // Hata durumunda varsayılan değerleri kullan
-                    resetToDefaultValues();
+        if (isOpen && patients.length > 0 && event) {
+            try {
+                const patientId = event.patientId || 
+                                 (event.extendedProps && event.extendedProps.patientId) || 
+                                 0;
+                
+                let start: Date;
+                let end: Date;
+                
+                if (typeof event.start === 'string') {
+                    start = new Date(event.start);
+                } else if (event.start instanceof Date) {
+                    start = event.start;
+                } else if (event._instance?.range?.start) {
+                    start = new Date(event._instance.range.start);
+                } else {
+                    start = new Date();
                 }
-            } else {
+                
+                if (typeof event.end === 'string') {
+                    end = new Date(event.end);
+                } else if (event.end instanceof Date) {
+                    end = event.end;
+                } else if (event._instance?.range?.end) {
+                    end = new Date(event._instance.range.end);
+                } else {
+                    end = new Date(start);
+                    end.setHours(end.getHours() + 1);
+                }
+                
+                const eventPatient = patients.find(p => p.id === patientId);
+                setSelectedPatient(eventPatient || null);
+                
+                let eventId: number | undefined;
+                if (event.id) {
+                    eventId = event.id;
+                } else if (event.publicId && typeof event.publicId === 'string') {
+                    eventId = parseInt(event.publicId);
+                } else if (event._def?.publicId) {
+                    eventId = parseInt(event._def.publicId);
+                }
+                
+                const eventTitle = event.title || 
+                                  (event._def?.title) || 
+                                  '';
+                
+                const eventColor = event.color || 
+                                  event.backgroundColor || 
+                                  (event._def?.ui?.backgroundColor) || 
+                                  PRESET_COLORS[0].value;
+                
+                setFormData({
+                    id: eventId,
+                    title: eventTitle,
+                    start: formatTime(start),
+                    end: formatTime(end),
+                    color: eventColor,
+                    patientId: patientId
+                });
+                
+                setStartDate(start);
+                setEndDate(end);
+            } catch (error) {
+                console.error('Event verisi işlenirken hata oluştu:', error);
                 resetToDefaultValues();
             }
+        } else if (isOpen && !event) {
+            resetToDefaultValues();
         }
     }, [isOpen, event, patients, resetToDefaultValues]);
 
-    const fetchPatients = async () => {
+    const fetchPatients = useCallback(async () => {
         setIsLoading(true);
         try {
             const response = await fetch('/api/patients');
@@ -200,22 +194,22 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-    };
+    }, []);
 
-    const formatTime = (date: Date): string => {
-        return date.toTimeString().slice(0, 5); // Returns time in HH:MM format
-    };
+    const formatTime = useCallback((date: Date): string => {
+        return date.toTimeString().slice(0, 5);
+    }, []);
 
-    const handleColorChange = (color: string) => {
+    const handleColorChange = useCallback((color: string) => {
         setFormData(prev => ({ ...prev, color }));
-    };
+    }, []);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
         
         if (!selectedPatient) {
@@ -262,9 +256,9 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [startDate, endDate, formData, selectedPatient, onUpdate, onClose]);
 
-    const handleDelete = async () => {
+    const handleDelete = useCallback(async () => {
         if (!formData.id) {
             onClose();
             return;
@@ -288,7 +282,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [formData.id, onUpdate, onClose]);
 
     if (!isOpen) return null;
 
@@ -326,13 +320,119 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={startDate}
-                                    onSelect={setStartDate}
-                                    initialFocus
-                                    locale={tr}
-                                />
+                                <div className="p-3">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <button 
+                                            type="button" 
+                                            className="p-1 rounded-full hover:bg-gray-100"
+                                            onClick={() => {
+                                                const prevMonth = new Date(startDate || new Date());
+                                                prevMonth.setMonth(prevMonth.getMonth() - 1);
+                                                setStartDate(prevMonth);
+                                            }}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                        </button>
+                                        <div className="font-medium">
+                                            {startDate ? format(startDate, "MMMM yyyy", { locale: tr }) : format(new Date(), "MMMM yyyy", { locale: tr })}
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            className="p-1 rounded-full hover:bg-gray-100"
+                                            onClick={() => {
+                                                const nextMonth = new Date(startDate || new Date());
+                                                nextMonth.setMonth(nextMonth.getMonth() + 1);
+                                                setStartDate(nextMonth);
+                                            }}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-7 gap-1 mb-2">
+                                        {['PT', 'SA', 'ÇA', 'PE', 'CU', 'CT', 'PZ'].map((day, i) => (
+                                            <div key={i} className="text-center text-xs font-medium text-gray-500">
+                                                {day}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-7 gap-1">
+                                        {(() => {
+                                            const currentDate = startDate || new Date();
+                                            const year = currentDate.getFullYear();
+                                            const month = currentDate.getMonth();
+                                            
+                                            const firstDay = new Date(year, month, 1);
+                                            const lastDay = new Date(year, month + 1, 0);
+                                            
+                                            let firstDayOfWeek = firstDay.getDay();
+                                            firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+                                            
+                                            const daysFromPrevMonth = firstDayOfWeek;
+                                            const totalDays = daysFromPrevMonth + lastDay.getDate();
+                                            const totalCells = Math.ceil(totalDays / 7) * 7;
+                                            
+                                            const days = [];
+                                            
+                                            const prevMonthLastDay = new Date(year, month, 0).getDate();
+                                            for (let i = 0; i < daysFromPrevMonth; i++) {
+                                                const day = prevMonthLastDay - daysFromPrevMonth + i + 1;
+                                                days.push({
+                                                    date: new Date(year, month - 1, day),
+                                                    day,
+                                                    isCurrentMonth: false,
+                                                    isToday: false
+                                                });
+                                            }
+                                            
+                                            const today = new Date();
+                                            for (let i = 1; i <= lastDay.getDate(); i++) {
+                                                const date = new Date(year, month, i);
+                                                days.push({
+                                                    date,
+                                                    day: i,
+                                                    isCurrentMonth: true,
+                                                    isToday: 
+                                                        date.getDate() === today.getDate() && 
+                                                        date.getMonth() === today.getMonth() && 
+                                                        date.getFullYear() === today.getFullYear(),
+                                                    isSelected: startDate && 
+                                                        date.getDate() === startDate.getDate() && 
+                                                        date.getMonth() === startDate.getMonth() && 
+                                                        date.getFullYear() === startDate.getFullYear()
+                                                });
+                                            }
+                                            
+                                            const remainingCells = totalCells - days.length;
+                                            for (let i = 1; i <= remainingCells; i++) {
+                                                days.push({
+                                                    date: new Date(year, month + 1, i),
+                                                    day: i,
+                                                    isCurrentMonth: false,
+                                                    isToday: false
+                                                });
+                                            }
+                                            
+                                            return days.map((day, index) => (
+                                                <button
+                                                    key={index}
+                                                    type="button"
+                                                    className={cn(
+                                                        "h-8 w-8 rounded-full flex items-center justify-center text-sm",
+                                                        !day.isCurrentMonth && "text-gray-400",
+                                                        day.isCurrentMonth && "hover:bg-gray-100",
+                                                        day.isToday && "border border-blue-500",
+                                                        day.isSelected && "bg-blue-500 text-white hover:bg-blue-600"
+                                                    )}
+                                                    onClick={() => setStartDate(day.date)}
+                                                >
+                                                    {day.day}
+                                                </button>
+                                            ));
+                                        })()}
+                                    </div>
+                                </div>
                             </PopoverContent>
                         </Popover>
                     </div>
@@ -364,13 +464,119 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={endDate}
-                                    onSelect={setEndDate}
-                                    initialFocus
-                                    locale={tr}
-                                />
+                                <div className="p-3">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <button 
+                                            type="button" 
+                                            className="p-1 rounded-full hover:bg-gray-100"
+                                            onClick={() => {
+                                                const prevMonth = new Date(endDate || new Date());
+                                                prevMonth.setMonth(prevMonth.getMonth() - 1);
+                                                setEndDate(prevMonth);
+                                            }}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                        </button>
+                                        <div className="font-medium">
+                                            {endDate ? format(endDate, "MMMM yyyy", { locale: tr }) : format(new Date(), "MMMM yyyy", { locale: tr })}
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            className="p-1 rounded-full hover:bg-gray-100"
+                                            onClick={() => {
+                                                const nextMonth = new Date(endDate || new Date());
+                                                nextMonth.setMonth(nextMonth.getMonth() + 1);
+                                                setEndDate(nextMonth);
+                                            }}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-7 gap-1 mb-2">
+                                        {['PT', 'SA', 'ÇA', 'PE', 'CU', 'CT', 'PZ'].map((day, i) => (
+                                            <div key={i} className="text-center text-xs font-medium text-gray-500">
+                                                {day}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-7 gap-1">
+                                        {(() => {
+                                            const currentDate = endDate || new Date();
+                                            const year = currentDate.getFullYear();
+                                            const month = currentDate.getMonth();
+                                            
+                                            const firstDay = new Date(year, month, 1);
+                                            const lastDay = new Date(year, month + 1, 0);
+                                            
+                                            let firstDayOfWeek = firstDay.getDay();
+                                            firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+                                            
+                                            const daysFromPrevMonth = firstDayOfWeek;
+                                            const totalDays = daysFromPrevMonth + lastDay.getDate();
+                                            const totalCells = Math.ceil(totalDays / 7) * 7;
+                                            
+                                            const days = [];
+                                            
+                                            const prevMonthLastDay = new Date(year, month, 0).getDate();
+                                            for (let i = 0; i < daysFromPrevMonth; i++) {
+                                                const day = prevMonthLastDay - daysFromPrevMonth + i + 1;
+                                                days.push({
+                                                    date: new Date(year, month - 1, day),
+                                                    day,
+                                                    isCurrentMonth: false,
+                                                    isToday: false
+                                                });
+                                            }
+                                            
+                                            const today = new Date();
+                                            for (let i = 1; i <= lastDay.getDate(); i++) {
+                                                const date = new Date(year, month, i);
+                                                days.push({
+                                                    date,
+                                                    day: i,
+                                                    isCurrentMonth: true,
+                                                    isToday: 
+                                                        date.getDate() === today.getDate() && 
+                                                        date.getMonth() === today.getMonth() && 
+                                                        date.getFullYear() === today.getFullYear(),
+                                                    isSelected: endDate && 
+                                                        date.getDate() === endDate.getDate() && 
+                                                        date.getMonth() === endDate.getMonth() && 
+                                                        date.getFullYear() === endDate.getFullYear()
+                                                });
+                                            }
+                                            
+                                            const remainingCells = totalCells - days.length;
+                                            for (let i = 1; i <= remainingCells; i++) {
+                                                days.push({
+                                                    date: new Date(year, month + 1, i),
+                                                    day: i,
+                                                    isCurrentMonth: false,
+                                                    isToday: false
+                                                });
+                                            }
+                                            
+                                            return days.map((day, index) => (
+                                                <button
+                                                    key={index}
+                                                    type="button"
+                                                    className={cn(
+                                                        "h-8 w-8 rounded-full flex items-center justify-center text-sm",
+                                                        !day.isCurrentMonth && "text-gray-400",
+                                                        day.isCurrentMonth && "hover:bg-gray-100",
+                                                        day.isToday && "border border-blue-500",
+                                                        day.isSelected && "bg-blue-500 text-white hover:bg-blue-600"
+                                                    )}
+                                                    onClick={() => setEndDate(day.date)}
+                                                >
+                                                    {day.day}
+                                                </button>
+                                            ));
+                                        })()}
+                                    </div>
+                                </div>
                             </PopoverContent>
                         </Popover>
                     </div>
