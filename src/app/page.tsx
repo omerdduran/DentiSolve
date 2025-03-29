@@ -58,6 +58,13 @@ export default function Home() {
         router.push('/protected/dashboard');
     }, [login, router]);
 
+    useEffect(() => {
+        if (isAuthenticated) {
+            console.log('User is already authenticated, redirecting to dashboard');
+            router.push('/protected/dashboard');
+        }
+    }, [isAuthenticated, router]);
+
     if (isLoading) {
         return (
             <div className="flex justify-center items-center min-h-screen bg-ilhanblue">
@@ -67,21 +74,21 @@ export default function Home() {
     }
 
     if (isAuthenticated) {
-        console.log('User is already authenticated, redirecting to dashboard');
-        router.push('/protected/dashboard');
         return null;
     }
 
     console.log('Rendering login screen');
     return (
         <div className="flex flex-col items-center min-h-screen bg-ilhanblue">
-            <Image
-                src="/Ilhan-Clinic.png"
-                alt="Dentisolve Logo"
-                width={250}
-                height={80}
-                className="pt-8 sm:pt-16 md:pt-24 lg:pt-32"
-            />
+            <div className="pt-8 sm:pt-16 md:pt-24 lg:pt-32 relative w-[250px] h-[80px]">
+                <Image
+                    src="/Ilhan-Clinic.png"
+                    alt="Dentisolve Logo"
+                    fill
+                    className="object-contain"
+                    priority
+                />
+            </div>
             <LoginScreen onSuccessfulLogin={handleSuccessfulLogin} />
         </div>
     );

@@ -35,7 +35,8 @@ export default function LoginPage() {
                         height={65}
                         priority
                         quality={90}
-                        className="drop-shadow-lg"
+                        className="drop-shadow-lg w-auto h-auto"
+                        style={{ width: '200px', height: 'auto' }}
                     />
                 </div>
             </div>
