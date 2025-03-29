@@ -2,9 +2,10 @@
 
 import React, { useState, Suspense, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Plus, X } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/hooks/use-query-hooks';
+import EventModal from '@/components/Modals/EventModal';
 
 // Dinamik importlar
 const DefaultCalendar = dynamic(() => import("@/components/CalendarViews/DefaultCalendar"), {
@@ -21,18 +22,8 @@ const DefaultCalendar = dynamic(() => import("@/components/CalendarViews/Default
     ssr: false // Calendar genellikle client-side rendering gerektirir
 });
 
-const EventForm = dynamic(() => import("@/components/EventForm"), {
-    loading: () => (
-        <div className="space-y-4 animate-pulse">
-            <div className="h-10 bg-gray-200 rounded w-full" />
-            <div className="h-32 bg-gray-200 rounded w-full" />
-            <div className="h-10 bg-gray-200 rounded w-1/2" />
-        </div>
-    )
-});
-
 export default function CalendarPage() {
-    const [showEventForm, setShowEventForm] = useState(false);
+    const [showEventModal, setShowEventModal] = useState(false);
     const queryClient = useQueryClient();
     const [refreshKey, setRefreshKey] = useState(0);
 
@@ -42,13 +33,13 @@ export default function CalendarPage() {
         queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENTS] });
     }, [queryClient, refreshKey]);
 
-    const toggleEventForm = () => {
-        setShowEventForm(!showEventForm);
+    const toggleEventModal = () => {
+        setShowEventModal(!showEventModal);
     };
 
-    const handleEventAdded = () => {
-        // Etkinlik eklendiğinde takvimi yenile
-        setShowEventForm(false);
+    const handleEventUpdate = () => {
+        // Etkinlik güncellendiğinde takvimi yenile
+        setShowEventModal(false);
         
         // Takvimi zorla yenile
         setRefreshKey(prev => prev + 1);
@@ -76,34 +67,20 @@ export default function CalendarPage() {
             </div>
             
             <button
-                onClick={toggleEventForm}
-                className="fixed bottom-4 right-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-3 shadow-lg transition-colors duration-200"
-                aria-label="Add Event"
+                onClick={toggleEventModal}
+                className="fixed bottom-8 right-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-4 shadow-lg transition-colors duration-200 z-50"
+                aria-label="Yeni randevu ekle"
             >
-                <Plus size={24} />
+                <Plus size={28} />
             </button>
 
-            {showEventForm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg max-w-3xl p-11 w-full relative">
-                        <button
-                            onClick={toggleEventForm}
-                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-                            aria-label="Close"
-                        >
-                            <X size={24} />
-                        </button>
-                        <Suspense fallback={
-                            <div className="space-y-4 animate-pulse">
-                                <div className="h-10 bg-gray-200 rounded w-full" />
-                                <div className="h-32 bg-gray-200 rounded w-full" />
-                                <div className="h-10 bg-gray-200 rounded w-1/2" />
-                            </div>
-                        }>
-                            <EventForm onEventAdded={handleEventAdded} />
-                        </Suspense>
-                    </div>
-                </div>
+            {showEventModal && (
+                <EventModal
+                    isOpen={showEventModal}
+                    onClose={toggleEventModal}
+                    event={null}
+                    onUpdate={handleEventUpdate}
+                />
             )}
         </main>
     );

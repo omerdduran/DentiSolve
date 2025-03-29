@@ -83,20 +83,19 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
     // Varsayılan değerlere sıfırlama fonksiyonu
     const resetToDefaultValues = useCallback(() => {
         const now = new Date();
-        const defaultPatient = patients[0];
         
-        setSelectedPatient(defaultPatient || null);
+        setSelectedPatient(null);
         setFormData({
             id: undefined,
             title: '',
             start: formatTime(now),
             end: formatTime(now),
             color: PRESET_COLORS[0].value,
-            patientId: defaultPatient?.id || 0
+            patientId: 0
         });
         setStartDate(now);
         setEndDate(now);
-    }, [patients, formatTime]);
+    }, [formatTime]);
 
     // Modal açıldığında hastaları yükle
     useEffect(() => {
