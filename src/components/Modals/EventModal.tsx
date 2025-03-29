@@ -75,9 +75,30 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredPatients = patients.filter(patient => {
+        const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
+        return fullName.includes(searchQuery.toLowerCase());
+    });
 
     const formatTime = useCallback((date: Date): string => {
         return date.toTimeString().slice(0, 5);
+    }, []);
+
+    const fetchPatients = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/patients');
+            if (!response.ok) throw new Error('Failed to fetch patients');
+            const data = await response.json();
+            setPatients(data);
+        } catch (error) {
+            console.error('Error fetching patients:', error);
+            setError('Hastalar yüklenirken bir hata oluştu');
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
 
     // Varsayılan değerlere sıfırlama fonksiyonu
@@ -109,7 +130,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
                 onLoaded();
             }
         }
-    }, [isOpen, onLoaded, propPatients]);
+    }, [isOpen, onLoaded, propPatients, fetchPatients]);
 
     // Event verilerini form state'ine yükle
     useEffect(() => {
@@ -185,21 +206,6 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
             }
         }
     }, [isOpen, event, patients, resetToDefaultValues, formatTime]);
-
-    const fetchPatients = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const response = await fetch('/api/patients');
-            if (!response.ok) throw new Error('Failed to fetch patients');
-            const data = await response.json();
-            setPatients(data);
-        } catch (error) {
-            console.error('Error fetching patients:', error);
-            setError('Hastalar yüklenirken bir hata oluştu');
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
 
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -618,18 +624,22 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
                             </PopoverTrigger>
                             <PopoverContent className="w-full p-0">
                                 <Command>
-                                    <CommandInput placeholder="Hasta ara..." />
+                                    <CommandInput 
+                                        placeholder="Hasta ara..." 
+                                        value={searchQuery}
+                                        onValueChange={setSearchQuery}
+                                    />
                                     <CommandList>
                                         <CommandEmpty>Hasta bulunamadı.</CommandEmpty>
                                         <CommandGroup>
-                                            {patients.map((patient) => (
+                                            {filteredPatients.map((patient) => (
                                                 <CommandItem
                                                     key={patient.id}
-                                                    value={patient.id.toString()}
                                                     onSelect={() => {
                                                         setSelectedPatient(patient);
                                                         setFormData(prev => ({ ...prev, patientId: patient.id }));
                                                         setOpen(false);
+                                                        setSearchQuery('');
                                                     }}
                                                 >
                                                     <Check
