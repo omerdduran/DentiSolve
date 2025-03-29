@@ -39,7 +39,11 @@ const Page = () => {
 
             <button
               onClick={handleThemeToggle}
-              className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-muted dark:bg-primary"
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
+                theme === "dark"
+                  ? "bg-primary"
+                  : "bg-slate-200"
+              }`}
               role="switch"
               aria-checked={theme === "dark"}
               tabIndex={0}
@@ -53,7 +57,8 @@ const Page = () => {
               <span
                 className={`${
                   theme === "dark" ? "translate-x-6" : "translate-x-1"
-                } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                } inline-block h-4 w-4 transform rounded-full bg-slate-50 transition-transform duration-300 ease-in-out shadow-[0_1px_4px_rgba(0,0,0,0.3)]`}
+                aria-hidden="true"
               />
             </button>
           </div>
