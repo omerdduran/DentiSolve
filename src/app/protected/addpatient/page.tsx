@@ -3,7 +3,7 @@
 import React, { useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { useToast } from "@/components/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import type { PatientFormData } from '@/components/Forms/PatientForm';
 import { useCreatePatient } from '@/hooks/use-query-hooks';

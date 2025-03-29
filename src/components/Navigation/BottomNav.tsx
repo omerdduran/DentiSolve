@@ -33,26 +33,9 @@ const MobileBottomNav = () => {
     const [openPopover, setOpenPopover] = useState<string | null>(null);
     const { logout } = useAuth();
 
-    const handleLogout = async () => {
-        try {
-            setIsLoggingOut(true);
-            const response = await fetch('/api/auth/logout', {
-                method: 'POST',
-                credentials: 'include',
-            });
-
-            if (response.ok) {
-                localStorage.removeItem('token');
-                logout();
-                router.push('/login');
-            } else {
-                console.error('Logout failed:', response.status);
-            }
-        } catch (error) {
-            console.error('Error during logout:', error);
-        } finally {
-            setIsLoggingOut(false);
-        }
+    const handleLogout = () => {
+        logout();
+        router.push('/');
     };
 
     const flatMenu: NavMenuItem[] = menuList.reduce<NavMenuItem[]>((acc, group: MenuGroup) => {

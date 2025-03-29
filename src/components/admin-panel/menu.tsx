@@ -28,41 +28,9 @@ export function Menu({ isOpen }: MenuProps) {
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const { logout } = useAuth();
 
-    const handleLogout = async () => {
-        try {
-            setIsLoggingOut(true);
-            console.log('Starting logout process');
-            console.log('Cookie before logout:', document.cookie);
-
-            const response = await fetch('/api/auth/logout', {
-                method: 'POST',
-                credentials: 'include',
-            });
-
-            console.log('Logout response status:', response.status);
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Logout response data:', data);
-
-                localStorage.removeItem('token');
-                console.log('Local Storage cleared');
-
-                logout();
-
-                console.log('Cookie after logout:', document.cookie);
-
-                console.log('Logout successful, redirecting...');
-                router.push('/login');
-            } else {
-                const errorData = await response.text();
-                console.error('Logout failed:', response.status, errorData);
-            }
-        } catch (error) {
-            console.error('Error during logout:', error);
-        } finally {
-            setIsLoggingOut(false);
-        }
+    const handleLogout = () => {
+        logout();
+        router.push('/');
     };
 
     return (

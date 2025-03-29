@@ -54,9 +54,10 @@ function MainContent({ children }: { children: React.ReactNode }) {
     }, [handleResize]);
 
     useEffect(() => {
-        setShowSidebar(isAuthenticated && pathname !== '/login' && !isSmallScreen);
-        setShowBottomNav(isSmallScreen && isAuthenticated && pathname !== '/login');
-    }, [isAuthenticated, pathname, isSmallScreen]);
+        // Update sidebar visibility based on authentication and screen size
+        setShowSidebar(isAuthenticated && pathname !== '/' && !isSmallScreen);
+        setShowBottomNav(isSmallScreen && isAuthenticated && pathname !== '/');
+    }, [pathname, isAuthenticated, isSmallScreen]);
 
     const sidebar = useStore(useSidebar, (x) => x);
     if (!sidebar) return null;
@@ -64,8 +65,8 @@ function MainContent({ children }: { children: React.ReactNode }) {
 
     const sidebarClass = showSidebar && (!getOpenState() ? "lg:ml-[90px]" : "lg:ml-72");
     
-    // Determine if we're on the login or root route
-    const isAuthRoute = pathname === '/' || pathname === '/login';
+    // Determine if we're on the root route
+    const isAuthRoute = pathname === '/';
     
     // Apply different background colors based on the route
     const mainBackgroundClass = isAuthRoute 

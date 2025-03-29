@@ -12,4 +12,4 @@ export function verifyToken(token: string): any {
     } catch (error) {
         return null;
     }
-}
+} 
