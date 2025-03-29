@@ -43,5 +43,6 @@ prisma/migrations/
 # Ignore the dev database
 prisma/dev.db
 public/uploads/
+public/images/
 
 
