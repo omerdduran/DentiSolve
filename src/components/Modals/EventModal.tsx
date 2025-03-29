@@ -270,12 +270,19 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
         setError(null);
 
         try {
-            const response = await fetch(`/api/events/${formData.id}`, {
+            const response = await fetch(`/api/events/${formData.id}/delete`, {
                 method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
             });
 
-            if (!response.ok) throw new Error('Failed to delete event');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to delete event');
+            }
 
+            // Silme işlemi başarılı olduğunda
             onUpdate({ id: formData.id, deleted: true });
             onClose();
         } catch (error) {
