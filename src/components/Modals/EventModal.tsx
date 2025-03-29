@@ -321,7 +321,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
                                     {startDate ? format(startDate, "d MMMM yyyy", { locale: tr }) : <span>Tarih seçin</span>}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
+                            <PopoverContent className="w-auto p-0" align="start" onPointerDownOutside={(e) => e.preventDefault()}>
                                 <div className="p-3">
                                     <div className="flex justify-between items-center mb-2">
                                         <button 
@@ -465,7 +465,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
                                     {endDate ? format(endDate, "d MMMM yyyy", { locale: tr }) : <span>Tarih seçin</span>}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
+                            <PopoverContent className="w-auto p-0" align="start" onPointerDownOutside={(e) => e.preventDefault()}>
                                 <div className="p-3">
                                     <div className="flex justify-between items-center mb-2">
                                         <button 
