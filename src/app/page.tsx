@@ -88,6 +88,8 @@ export default function Home() {
                 width={250}
                 height={80}
                 className="pt-8 sm:pt-16 md:pt-24 lg:pt-32"
+                style={{ width: 'auto', height: 'auto' }}
+                priority
             />
             <LoginScreen onSuccessfulLogin={handleSuccessfulLogin} />
         </div>

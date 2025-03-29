@@ -68,7 +68,7 @@ export default function CalendarPage() {
             
             <button
                 onClick={toggleEventModal}
-                className="fixed bottom-8 right-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-4 shadow-lg transition-colors duration-200 z-50"
+                className="fixed bottom-20 sm:bottom-8 right-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-4 shadow-lg transition-colors duration-200 z-50"
                 aria-label="Yeni randevu ekle"
             >
                 <Plus size={28} />

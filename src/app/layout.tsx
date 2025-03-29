@@ -67,7 +67,9 @@ function MainContent({ children }: { children: React.ReactNode }) {
     const isAuthRoute = pathname === '/' || pathname === '/login';
     
     // Apply different background colors based on the route
-    const mainBackgroundClass = "bg-slate-900";
+    const mainBackgroundClass = isAuthRoute 
+        ? "bg-slate-900" 
+        : "bg-white";
 
     return (
         <>
