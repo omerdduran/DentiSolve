@@ -62,14 +62,23 @@ function MainContent({ children }: { children: React.ReactNode }) {
     const { getOpenState } = sidebar;
 
     const sidebarClass = showSidebar && (!getOpenState() ? "lg:ml-[90px]" : "lg:ml-72");
+    
+    // Determine if we're on the login or root route
+    const isAuthRoute = pathname === '/' || pathname === '/login';
+    
+    // Apply different background colors based on the route
+    const mainBackgroundClass = isAuthRoute 
+        ? "bg-ilhanblue" 
+        : "bg-zinc-50 dark:bg-zinc-900";
 
     return (
         <>
             {showSidebar && <Sidebar />}
             <main
                 className={cn(
-                    "min-h-[calc(100vh_-_56px)] bg-zinc-50 dark:bg-zinc-900 transition-[margin-left] ease-in-out duration-300",
-                    sidebarClass
+                    "min-h-[calc(100vh_-_56px)] transition-[margin-left] ease-in-out duration-300",
+                    sidebarClass,
+                    mainBackgroundClass
                 )}
             >
                 {children}

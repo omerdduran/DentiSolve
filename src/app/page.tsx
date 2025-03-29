@@ -10,6 +10,7 @@ export default function Home() {
     const { isAuthenticated, login } = useAuth();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
+    const [shouldRedirect, setShouldRedirect] = useState(false);
 
     const checkAuth = useCallback(async () => {
         console.log('Checking authentication status');
@@ -30,8 +31,8 @@ export default function Home() {
                 if (response.ok) {
                     console.log('Token is valid, logging in');
                     await login(storedToken);
-                    router.push('/protected/dashboard');
-                    return; // Early return to prevent setting isLoading to false
+                    setShouldRedirect(true);
+                    return;
                 } else {
                     console.log('Token is invalid, clearing local storage');
                     localStorage.removeItem('isAuthenticated');
@@ -44,19 +45,31 @@ export default function Home() {
             console.log('No stored authentication found');
         }
         setIsLoading(false);
-    }, [login, router]);
+    }, [login]);
 
     useEffect(() => {
         checkAuth();
     }, [checkAuth]);
+
+    useEffect(() => {
+        if (shouldRedirect) {
+            router.push('/protected/dashboard');
+        }
+    }, [shouldRedirect, router]);
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            router.push('/protected/dashboard');
+        }
+    }, [isAuthenticated, router]);
 
     const handleSuccessfulLogin = useCallback((token: string) => {
         console.log('Login successful, setting local storage');
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('authToken', token);
         login(token);
-        router.push('/protected/dashboard');
-    }, [login, router]);
+        setShouldRedirect(true);
+    }, [login]);
 
     if (isLoading) {
         return (
@@ -64,12 +77,6 @@ export default function Home() {
                 <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-white"></div>
             </div>
         );
-    }
-
-    if (isAuthenticated) {
-        console.log('User is already authenticated, redirecting to dashboard');
-        router.push('/protected/dashboard');
-        return null;
     }
 
     console.log('Rendering login screen');
