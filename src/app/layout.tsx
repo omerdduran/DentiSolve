@@ -66,7 +66,7 @@ function MainContent({ children }: { children: React.ReactNode }) {
             {showSidebar && <Sidebar />}
             <main
                 className={cn(
-                    "min-h-[calc(100vh_-_56px)] bg-zinc-50 dark:bg-zinc-900 transition-[margin-left] ease-in-out duration-300",
+                    "min-h-screen transition-[margin-left] ease-in-out duration-300",
                     sidebarClass
                 )}
             >
@@ -78,6 +78,9 @@ function MainContent({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout({children}: { children: React.ReactNode }) {
+    const pathname = usePathname();
+    const isLoginOrRoot = pathname === '/login' || pathname === '/';
+    
     return (
         <html lang="en" className={`${inter.variable} ${roboto.variable}`}>
         <head>
@@ -85,11 +88,11 @@ export default function RootLayout({children}: { children: React.ReactNode }) {
             <link rel="icon" href="/favicon.ico" />
             <meta name="viewport" content="width=device-width, initial-scale=1" />
         </head>
-        <body className={`${inter.className} antialiased`}>
-        <AuthProvider>
-            <MainContent>{children}</MainContent>
-            <Toaster />
-        </AuthProvider>
+        <body className={`${inter.className} antialiased ${isLoginOrRoot ? 'bg-[#141824]' : 'bg-zinc-50 dark:bg-zinc-900'}`}>
+            <AuthProvider>
+                <MainContent>{children}</MainContent>
+                <Toaster />
+            </AuthProvider>
         </body>
         </html>
     );
