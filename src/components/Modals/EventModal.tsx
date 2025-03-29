@@ -76,6 +76,10 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
+    const formatTime = useCallback((date: Date): string => {
+        return date.toTimeString().slice(0, 5);
+    }, []);
+
     // Varsayılan değerlere sıfırlama fonksiyonu
     const resetToDefaultValues = useCallback(() => {
         const now = new Date();
@@ -92,7 +96,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
         });
         setStartDate(now);
         setEndDate(now);
-    }, [patients]);
+    }, [patients, formatTime]);
 
     // Modal açıldığında hastaları yükle
     useEffect(() => {
@@ -110,76 +114,78 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
 
     // Event verilerini form state'ine yükle
     useEffect(() => {
-        if (isOpen && patients.length > 0 && event) {
-            try {
-                const patientId = event.patientId || 
-                                 (event.extendedProps && event.extendedProps.patientId) || 
-                                 0;
-                
-                let start: Date;
-                let end: Date;
-                
-                if (typeof event.start === 'string') {
-                    start = new Date(event.start);
-                } else if (event.start instanceof Date) {
-                    start = event.start;
-                } else if (event._instance?.range?.start) {
-                    start = new Date(event._instance.range.start);
-                } else {
-                    start = new Date();
+        if (isOpen && patients.length > 0) {
+            if (event) {
+                try {
+                    const patientId = event.patientId || 
+                                     (event.extendedProps && event.extendedProps.patientId) || 
+                                     0;
+                    
+                    let start: Date;
+                    let end: Date;
+                    
+                    if (typeof event.start === 'string') {
+                        start = new Date(event.start);
+                    } else if (event.start instanceof Date) {
+                        start = event.start;
+                    } else if (event._instance?.range?.start) {
+                        start = new Date(event._instance.range.start);
+                    } else {
+                        start = new Date();
+                    }
+                    
+                    if (typeof event.end === 'string') {
+                        end = new Date(event.end);
+                    } else if (event.end instanceof Date) {
+                        end = event.end;
+                    } else if (event._instance?.range?.end) {
+                        end = new Date(event._instance.range.end);
+                    } else {
+                        end = new Date(start);
+                        end.setHours(end.getHours() + 1);
+                    }
+                    
+                    const eventPatient = patients.find(p => p.id === patientId);
+                    setSelectedPatient(eventPatient || null);
+                    
+                    let eventId: number | undefined;
+                    if (event.id) {
+                        eventId = event.id;
+                    } else if (event.publicId && typeof event.publicId === 'string') {
+                        eventId = parseInt(event.publicId);
+                    } else if (event._def?.publicId) {
+                        eventId = parseInt(event._def.publicId);
+                    }
+                    
+                    const eventTitle = event.title || 
+                                      (event._def?.title) || 
+                                      '';
+                    
+                    const eventColor = event.color || 
+                                      event.backgroundColor || 
+                                      (event._def?.ui?.backgroundColor) || 
+                                      PRESET_COLORS[0].value;
+                    
+                    setFormData({
+                        id: eventId,
+                        title: eventTitle,
+                        start: formatTime(start),
+                        end: formatTime(end),
+                        color: eventColor,
+                        patientId: patientId
+                    });
+                    
+                    setStartDate(start);
+                    setEndDate(end);
+                } catch (error) {
+                    console.error('Event verisi işlenirken hata oluştu:', error);
+                    resetToDefaultValues();
                 }
-                
-                if (typeof event.end === 'string') {
-                    end = new Date(event.end);
-                } else if (event.end instanceof Date) {
-                    end = event.end;
-                } else if (event._instance?.range?.end) {
-                    end = new Date(event._instance.range.end);
-                } else {
-                    end = new Date(start);
-                    end.setHours(end.getHours() + 1);
-                }
-                
-                const eventPatient = patients.find(p => p.id === patientId);
-                setSelectedPatient(eventPatient || null);
-                
-                let eventId: number | undefined;
-                if (event.id) {
-                    eventId = event.id;
-                } else if (event.publicId && typeof event.publicId === 'string') {
-                    eventId = parseInt(event.publicId);
-                } else if (event._def?.publicId) {
-                    eventId = parseInt(event._def.publicId);
-                }
-                
-                const eventTitle = event.title || 
-                                  (event._def?.title) || 
-                                  '';
-                
-                const eventColor = event.color || 
-                                  event.backgroundColor || 
-                                  (event._def?.ui?.backgroundColor) || 
-                                  PRESET_COLORS[0].value;
-                
-                setFormData({
-                    id: eventId,
-                    title: eventTitle,
-                    start: formatTime(start),
-                    end: formatTime(end),
-                    color: eventColor,
-                    patientId: patientId
-                });
-                
-                setStartDate(start);
-                setEndDate(end);
-            } catch (error) {
-                console.error('Event verisi işlenirken hata oluştu:', error);
+            } else {
                 resetToDefaultValues();
             }
-        } else if (isOpen && !event) {
-            resetToDefaultValues();
         }
-    }, [isOpen, event, patients, resetToDefaultValues]);
+    }, [isOpen, event, patients, resetToDefaultValues, formatTime]);
 
     const fetchPatients = useCallback(async () => {
         setIsLoading(true);
@@ -199,10 +205,6 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, patient
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-    }, []);
-
-    const formatTime = useCallback((date: Date): string => {
-        return date.toTimeString().slice(0, 5);
     }, []);
 
     const handleColorChange = useCallback((color: string) => {
