@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import listPlugin from '@fullcalendar/list';
 import { EventClickArg, EventInput, CalendarOptions } from '@fullcalendar/core';
-import { Patient } from "@/shared/types";
+import { Patient } from "@/lib/types";
 import { useEvents, usePatients } from '@/hooks/use-query-hooks';
 import { Button } from '@/components/ui/button';
 

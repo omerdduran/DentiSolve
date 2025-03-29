@@ -1,8 +1,8 @@
 import React, {useState, useEffect} from 'react';
 import Image from 'next/image';
 import ModalWrapper from './ModalWrapper';
-import {Patient, Appointment, Xray, PatientFormData} from '@/shared/types';
-import {formatDate} from '@/shared/utils';
+import {Patient, Appointment, Xray, PatientFormData} from '@/lib/types';
+import {formatDate} from '@/lib/utils';
 import PatientForm from "@/components/Forms/PatientForm";
 import {
     Collapsible,
@@ -100,10 +100,6 @@ const PatientModal: React.FC<PatientModalProps> = ({
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">Telefon</p>
                                     <p className="text-foreground">{patient.homePhone || 'N/A'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">E-posta</p>
-                                    <p className="text-foreground">{patient.email || 'N/A'}</p>
                                 </div>
                             </div>
                         </div>

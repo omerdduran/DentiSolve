@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Patient } from "@/shared/types";
+import { Patient } from "@/lib/types";
 import { Check, ChevronsUpDown, CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -21,7 +21,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import {PRESET_COLORS} from "@/shared/utils";
+import {PRESET_COLORS} from "@/lib/utils";
 import ModalWrapper from './ModalWrapper';
 
 

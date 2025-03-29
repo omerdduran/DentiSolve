@@ -2,7 +2,7 @@
 
 import React, { useState, Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import { Patient, Xray } from '@/shared/types';
+import { Patient, Xray } from '@/lib/types';
 import { usePatients, useXrays } from '@/hooks/use-query-hooks';
 
 // Dinamik importlar

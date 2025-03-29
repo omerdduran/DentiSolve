@@ -1,5 +1,5 @@
 import React from 'react';
-import { RecentXraysProps } from '@/shared/types';
+import { RecentXraysProps } from '@/lib/types';
 
 export const RecentXrays: React.FC<RecentXraysProps> = ({ xrays }) => {
     return (

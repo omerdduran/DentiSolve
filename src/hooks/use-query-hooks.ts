@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Patient, Xray, Appointment } from '@/shared/types';
+import { Patient, Xray, Appointment } from '@/lib/types';
 import * as apiService from '@/lib/api-service';
 
 // Query keys

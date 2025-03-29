@@ -49,21 +49,21 @@ DentalCPMS/
 git clone [repository-url]
 ```
 
-2. Install dependencies
+1. Install dependencies
 ```bash
 npm install
 # or
 yarn install
 ```
 
-3. Start the development server
+1. Start the development server
 ```bash
 npm run dev
 # or
 yarn dev
 ```
 
-4. Open in browser
+1. Open in browser
 ```
 http://localhost:3000
 ```

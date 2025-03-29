@@ -3,7 +3,7 @@
 import React, { useState, useMemo, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from "@/components/ui/button"
-import { Xray } from "@/shared/types";
+import { Xray } from "@/lib/types";
 import { useXrays, usePatients, useUpdateOrCreateXray, useDeleteXray } from '@/hooks/use-query-hooks';
 
 // Dinamik import

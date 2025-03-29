@@ -1,6 +1,6 @@
 import React from 'react';
-import { Patient } from '@/shared/types';
-import { getAgeFromDateOfBirth } from '@/shared/utils';
+import { Patient } from '@/lib/types';
+import { getAgeFromDateOfBirth } from '@/lib/utils';
 
 interface RecentPatientsProps {
     patients: Patient[];

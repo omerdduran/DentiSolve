@@ -57,4 +57,4 @@ export interface PatientFormData {
     surgeryHistory: string;
     anyMedicalProblems: string;
     womenSpecificInfo: string;
-}
+} 

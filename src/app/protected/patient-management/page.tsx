@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import { Patient, Xray, Appointment } from '@/shared/types';
-import { formatDate } from '@/shared/utils';
+import { Patient, Xray, Appointment } from '@/lib/types';
+import { formatDate } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { Button } from "@/components/ui/button";
 import { 

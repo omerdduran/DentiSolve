@@ -2,7 +2,7 @@
 
 import React, {useState, useEffect, useCallback} from 'react'
 import ModalWrapper from './ModalWrapper'
-import { Patient, Xray } from "@/shared/types"
+import { Patient, Xray } from "@/lib/types"
 import Image from 'next/image'
 import { format, parseISO } from "date-fns"
 import { tr } from 'date-fns/locale'

@@ -1,4 +1,4 @@
-import { Patient, Xray, Appointment } from '@/shared/types';
+import { Patient, Xray, Appointment } from '@/lib/types';
 
 // API endpoint constants
 const API_ENDPOINTS = {

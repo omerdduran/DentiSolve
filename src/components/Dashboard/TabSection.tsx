@@ -1,5 +1,5 @@
 import React from 'react';
-import { Patient, Xray } from '@/shared/types';
+import { Patient, Xray } from '@/lib/types';
 import { RecentPatients } from "@/components/Dashboard/Recent/RecentPatients";
 import { RecentXrays } from "@/components/Dashboard/Recent/RecentXrays";
 import TabButton from "@/components/Dashboard/TabButton";

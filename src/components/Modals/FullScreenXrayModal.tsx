@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import ModalWrapper from './ModalWrapper';
-import { formatDate } from '@/shared/utils';
+import { formatDate } from '@/lib/utils';
 
 interface FullScreenXrayModalProps {
     isOpen: boolean;
